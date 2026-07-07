@@ -438,10 +438,13 @@ app.get('/api/group-config/:groupId', (req, res) => {
             useAiFallback: true,
             triggerPrefix: '',
             allowedKnowledgeFiles: [],
+            categoryFooter: 'Silakan pilih menu dengan mengetik angkanya:',
+            contentFooter: 'Ketik *0* untuk kembali ke menu sebelumnya, atau *#* untuk kembali ke menu utama.',
             menuTree: {
                 id: "root",
                 name: "Menu Utama",
                 type: "category",
+                text: "Silakan pilih salah satu opsi di bawah ini:",
                 children: []
             }
         };
@@ -455,7 +458,7 @@ app.get('/api/group-config/:groupId', (req, res) => {
 app.post('/api/group-config/:groupId', (req, res) => {
     try {
         const { groupId } = req.params;
-        const { groupName, enabled, useAiFallback, triggerPrefix, allowedKnowledgeFiles, menuTree } = req.body;
+        const { groupName, enabled, useAiFallback, triggerPrefix, allowedKnowledgeFiles, categoryFooter, contentFooter, menuTree } = req.body;
         
         groupConfigs.group_configs[groupId] = {
             groupName: groupName || groupId,
@@ -463,7 +466,9 @@ app.post('/api/group-config/:groupId', (req, res) => {
             useAiFallback: useAiFallback !== undefined ? useAiFallback : true,
             triggerPrefix: triggerPrefix !== undefined ? triggerPrefix : '',
             allowedKnowledgeFiles: allowedKnowledgeFiles || [],
-            menuTree: menuTree || { id: "root", name: "Menu Utama", type: "category", children: [] }
+            categoryFooter: categoryFooter !== undefined ? categoryFooter : 'Silakan pilih menu dengan mengetik angkanya:',
+            contentFooter: contentFooter !== undefined ? contentFooter : 'Ketik *0* untuk kembali ke menu sebelumnya, atau *#* untuk kembali ke menu utama.',
+            menuTree: menuTree || { id: "root", name: "Menu Utama", type: "category", text: "Silakan pilih salah satu opsi di bawah ini:", children: [] }
         };
         
         saveGroupConfigs();
@@ -545,7 +550,7 @@ app.post('/api/whatsapp/restart', async (req, res) => {
         
         // 3. Re-initialize client
         console.log('[API] Memulai inisialisasi ulang WhatsApp Client...');
-        client.initialize();
+        createNewClient();
         
         res.sendStatus(200);
     } catch (err) {
@@ -584,10 +589,16 @@ if (process.platform === 'android') {
     console.log(`[WhatsApp] Menggunakan custom puppeteer executablePath: ${puppeteerOptions.executablePath}`);
 }
 
-const client = new Client({
-    authStrategy: new LocalAuth({ dataPath: './session' }),
-    puppeteer: puppeteerOptions
-});
+let client;
+
+function createNewClient() {
+    client = new Client({
+        authStrategy: new LocalAuth({ dataPath: './session' }),
+        puppeteer: puppeteerOptions
+    });
+    attachClientListeners();
+    client.initialize();
+}
 
 // State Management
 const activeLocks = new Set(); // Mengunci user agar tidak double-request saat LLM sedang memproses
@@ -1673,24 +1684,47 @@ io.on('connection', (socket) => {
     }
 });
 
-// Event Handler QR Code
-client.on('qr', (qr) => {
-    console.log('\n======================================================');
-    console.log('SILAKAN SCAN QR CODE BERIKUT DENGAN APLIKASI WHATSAPP:');
-    console.log('======================================================\n');
-    qrcode.generate(qr, { small: true });
-    
-    currentStatus = 'QR_RECEIVED';
-    currentQrCode = qr;
-    io.emit('whatsapp_status', { status: currentStatus });
-    io.emit('qr', qr);
-});
+// Mengikat seluruh event listener ke instance client WhatsApp aktif
+function attachClientListeners() {
+    client.on('qr', (qr) => {
+        console.log('\n======================================================');
+        console.log('SILAKAN SCAN QR CODE BERIKUT DENGAN APLIKASI WHATSAPP:');
+        console.log('======================================================\n');
+        qrcode.generate(qr, { small: true });
+        
+        currentStatus = 'QR_RECEIVED';
+        currentQrCode = qr;
+        io.emit('whatsapp_status', { status: currentStatus });
+        io.emit('qr', qr);
+    });
 
-client.on('loading_screen', (percent, message) => {
-    console.log(`Menginisialisasi WhatsApp: ${percent}% - ${message}`);
-    currentStatus = 'INITIALIZING';
-    io.emit('whatsapp_status', { status: currentStatus });
-});
+    client.on('loading_screen', (percent, message) => {
+        console.log(`Menginisialisasi WhatsApp: ${percent}% - ${message}`);
+        currentStatus = 'INITIALIZING';
+        io.emit('whatsapp_status', { status: currentStatus });
+    });
+
+    client.on('ready', () => {
+        console.log('\n======================================================');
+        console.log('Chatbot WhatsApp AI Lokal (Qwen) Berhasil Tersambung!');
+        console.log('======================================================\n');
+        currentStatus = 'CONNECTED';
+        currentQrCode = null;
+        io.emit('whatsapp_status', { status: currentStatus });
+        
+        startDailyReportScheduler();
+        startReminderScheduler();
+    });
+
+    client.on('disconnected', (reason) => {
+        console.log('Koneksi WhatsApp terputus:', reason);
+        currentStatus = 'DISCONNECTED';
+        currentQrCode = null;
+        io.emit('whatsapp_status', { status: currentStatus });
+    });
+
+    client.on('message', handleIncomingMessage);
+}
 
 // Variabel & Fungsi Scheduler Laporan Harian Otomatis
 let lastSentReportDate = '';
@@ -1788,26 +1822,7 @@ function startDailyReportScheduler() {
     }, 30000); // Cek setiap 30 detik
 }
 
-// Event Handler Client Siap
-client.on('ready', () => {
-    console.log('\n======================================================');
-    console.log('Chatbot WhatsApp AI Lokal (Qwen) Berhasil Tersambung!');
-    console.log('======================================================\n');
-    currentStatus = 'CONNECTED';
-    currentQrCode = null;
-    io.emit('whatsapp_status', { status: currentStatus });
-    
-    // Mulai scheduler
-    startDailyReportScheduler();
-    startReminderScheduler();
-});
 
-client.on('disconnected', (reason) => {
-    console.log('Koneksi WhatsApp terputus:', reason);
-    currentStatus = 'DISCONNECTED';
-    currentQrCode = null;
-    io.emit('whatsapp_status', { status: currentStatus });
-});
 
 // Sesi navigasi menu interaktif anggota di grup
 const customerMenuStates = new Map();
@@ -1824,17 +1839,43 @@ function findNodeById(node, id) {
     return null;
 }
 
+// Helper: Cari node berdasarkan nama (case-insensitive) dan kembalikan node beserta daftar ID parent-nya
+function findNodeByName(node, name, parentPath = []) {
+    if (node && node.name && node.name.toLowerCase().trim() === name.toLowerCase().trim()) {
+        return { node, parentPath };
+    }
+    if (node && node.children && Array.isArray(node.children)) {
+        for (const child of node.children) {
+            const path = [...parentPath, node.id];
+            const result = findNodeByName(child, name, path);
+            if (result) return result;
+        }
+    }
+    return null;
+}
+
 // Helper: Render menu untuk grup
-function renderGroupMenuMessage(node) {
+function renderGroupMenuMessage(node, cfg = {}) {
     let msg = `📂 *${node.name}*\n\n`;
+    
+    // Tampilkan deskripsi kategori jika ada
+    if (node.text && node.text.trim() !== '') {
+        msg += `${node.text.trim()}\n\n`;
+    }
+    
     if (node.type === 'category' && node.children && node.children.length > 0) {
-        msg += "Silakan pilih menu dengan mengetik angkanya:\n\n";
+        const optionIntro = cfg.categoryFooter || "Silakan pilih menu dengan mengetik angkanya:";
+        msg += `${optionIntro}\n\n`;
         node.children.forEach((child, index) => {
             const emoji = child.type === 'category' ? '📁' : '📄';
             msg += `${index + 1}️⃣ ${emoji} *${child.name}*\n`;
         });
-        msg += "\n*0*️⃣ 🔙 *Kembali ke Menu Sebelumnya*";
-        msg += "\n*#*️⃣ 🏠 *Kembali ke Menu Utama*";
+        
+        // Hanya tampilkan navigasi jika bukan root menu utama
+        if (node.id !== 'root') {
+            msg += "\n*0*️⃣ 🔙 *Kembali ke Menu Sebelumnya*";
+            msg += "\n*#*️⃣ 🏠 *Kembali ke Menu Utama*";
+        }
     }
     return msg;
 }
@@ -1873,7 +1914,7 @@ function getGroupKnowledgeContext(allowedFiles) {
 }
 
 // Main Handler Pesan Masuk
-client.on('message', async (msg) => {
+async function handleIncomingMessage(msg) {
     const chatId = msg.from;
     const userMessage = msg.body ? msg.body.trim() : '';
 
@@ -1924,12 +1965,56 @@ client.on('message', async (msg) => {
             });
             
             const rootNode = cfg.menuTree || { id: "root", name: "Menu Utama", type: "category", children: [] };
-            const replyMsg = renderGroupMenuMessage(rootNode);
+            const replyMsg = renderGroupMenuMessage(rootNode, cfg);
             await msg.reply(replyMsg);
             
             io.emit('message_log', {
                 chatId: groupId,
                 body: `[Menu Utama dikirim ke ${senderId.split('@')[0]}]`,
+                type: 'outgoing',
+                timestamp: Date.now()
+            });
+            return;
+        }
+        
+        // Cek pencocokan nama menu secara langsung (Direct Menu Name Trigger)
+        const matchResult = findNodeByName(cfg.menuTree || { id: "root", name: "Menu Utama", type: "category", children: [] }, userMessage);
+        
+        if (matchResult) {
+            const { node: matchedNode, parentPath } = matchResult;
+            
+            // Inisialisasi atau perbarui sesi menu untuk navigasi berikutnya
+            customerMenuStates.set(sessionKey, {
+                currentNodeId: matchedNode.type === 'category' ? matchedNode.id : parentPath[parentPath.length - 1] || 'root',
+                parentIds: matchedNode.type === 'category' ? parentPath : parentPath.slice(0, -1),
+                lastActive: Date.now()
+            });
+            
+            if (matchedNode.type === 'category') {
+                const replyMsg = renderGroupMenuMessage(matchedNode, cfg);
+                await msg.reply(replyMsg);
+            } else {
+                let replyText = `📄 *${matchedNode.name}*\n\n${matchedNode.text}`;
+                const footerText = cfg.contentFooter || `_Ketik *0* untuk kembali ke menu sebelumnya, atau *#* untuk kembali ke menu utama._`;
+                replyText += `\n\n${footerText}`;
+                
+                await msg.reply(replyText);
+                
+                if (matchedNode.media && matchedNode.media.trim() !== '') {
+                    const mediaPath = path.join('./media', matchedNode.media.trim());
+                    if (fs.existsSync(mediaPath)) {
+                        const fileData = fs.readFileSync(mediaPath);
+                        const base64Data = fileData.toString('base64');
+                        const mimeType = getMimeType(mediaPath);
+                        const mediaObj = new MessageMedia(mimeType, base64Data, path.basename(mediaPath));
+                        await client.sendMessage(groupId, mediaObj, { quotedMessageId: msg.id._serialized });
+                    }
+                }
+            }
+            
+            io.emit('message_log', {
+                chatId: groupId,
+                body: `[Direct Match: ${matchedNode.name}]`,
                 type: 'outgoing',
                 timestamp: Date.now()
             });
@@ -1953,7 +2038,7 @@ client.on('message', async (msg) => {
                 }
                 
                 const currentNode = findNodeById(cfg.menuTree, session.currentNodeId) || cfg.menuTree;
-                const replyMsg = renderGroupMenuMessage(currentNode);
+                const replyMsg = renderGroupMenuMessage(currentNode, cfg);
                 await msg.reply(replyMsg);
                 return;
             }
@@ -1963,7 +2048,7 @@ client.on('message', async (msg) => {
                 session.currentNodeId = 'root';
                 session.parentIds = [];
                 
-                const replyMsg = renderGroupMenuMessage(cfg.menuTree);
+                const replyMsg = renderGroupMenuMessage(cfg.menuTree, cfg);
                 await msg.reply(replyMsg);
                 return;
             }
@@ -1980,12 +2065,13 @@ client.on('message', async (msg) => {
                     session.parentIds.push(session.currentNodeId);
                     session.currentNodeId = chosenNode.id;
                     
-                    const replyMsg = renderGroupMenuMessage(chosenNode);
+                    const replyMsg = renderGroupMenuMessage(chosenNode, cfg);
                     await msg.reply(replyMsg);
                 } else {
                     // Leaf Node: Kirim konten teks + media
                     let replyText = `📄 *${chosenNode.name}*\n\n${chosenNode.text}`;
-                    replyText += `\n\n_Ketik *0* untuk kembali ke menu sebelumnya, atau *#* untuk kembali ke menu utama._`;
+                    const footerText = cfg.contentFooter || `_Ketik *0* untuk kembali ke menu sebelumnya, atau *#* untuk kembali ke menu utama._`;
+                    replyText += `\n\n${footerText}`;
                     
                     await msg.reply(replyText);
                     
@@ -2761,7 +2847,7 @@ Ketik obrolan seperti biasa, AI akan mendeteksi otomatis!
     } finally {
         activeLocks.delete(chatId);
     }
-});
+}
 
 // Proteksi Global agar aplikasi tidak crash secara tiba-tiba
 process.on('uncaughtException', (err) => {
@@ -2777,5 +2863,5 @@ server.listen(PORT, () => {
     console.log(`\n======================================================`);
     console.log(`Web Dashboard CS Aktif di: http://localhost:${PORT}`);
     console.log(`======================================================\n`);
-    client.initialize();
+    createNewClient();
 });

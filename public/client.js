@@ -782,6 +782,8 @@ window.selectGroup = async function(groupId) {
         document.getElementById('grp-enabled').checked = selectedGroupConfig.enabled;
         document.getElementById('grp-ai-fallback').checked = selectedGroupConfig.useAiFallback;
         document.getElementById('grp-trigger').value = selectedGroupConfig.triggerPrefix || '';
+        document.getElementById('grp-category-footer').value = selectedGroupConfig.categoryFooter || 'Silakan pilih menu dengan mengetik angkanya:';
+        document.getElementById('grp-content-footer').value = selectedGroupConfig.contentFooter || 'Ketik *0* untuk kembali ke menu sebelumnya, atau *#* untuk kembali ke menu utama.';
         
         // Load knowledge files list (dengan checkbox keaktifan)
         await loadKnowledgeFilesChecklist();
@@ -929,24 +931,26 @@ window.selectTreeNode = function(nodeId) {
     // Tipe toggle fields
     toggleNodeFields();
     
+    document.getElementById('node-text').value = node.text || '';
     if (node.type === 'content') {
-        document.getElementById('node-text').value = node.text || '';
         document.getElementById('node-media').value = node.media || '';
+    } else {
+        document.getElementById('node-media').value = '';
     }
 };
 
 // Toggle field berdasarkan tipe node aktif
 window.toggleNodeFields = function() {
     const nodeType = document.getElementById('node-type').value;
-    const contentFields = document.getElementById('node-content-fields');
+    const mediaField = document.getElementById('node-media-field');
     const btnAddChild = document.getElementById('btn-add-child');
     
     if (nodeType === 'category') {
-        contentFields.classList.add('hidden');
-        btnAddChild.classList.remove('hidden');
+        if (mediaField) mediaField.classList.add('hidden');
+        if (btnAddChild) btnAddChild.classList.remove('hidden');
     } else {
-        contentFields.classList.remove('hidden');
-        btnAddChild.classList.add('hidden');
+        if (mediaField) mediaField.classList.remove('hidden');
+        if (btnAddChild) btnAddChild.classList.add('hidden');
     }
     
     // Sync ke data pohon jika ada pergantian tipe node
@@ -956,10 +960,8 @@ window.toggleNodeFields = function() {
             node.type = nodeType;
             if (nodeType === 'category') {
                 node.children = node.children || [];
-                delete node.text;
                 delete node.media;
             } else {
-                node.text = "Isi teks baru...";
                 node.media = "";
                 delete node.children;
             }
@@ -1008,7 +1010,7 @@ document.addEventListener('DOMContentLoaded', () => {
         inputText.addEventListener('input', (e) => {
             if (!selectedGroupId || !selectedNodeId) return;
             const node = findNodeInTree(selectedGroupConfig.menuTree, selectedNodeId);
-            if (node && node.type === 'content') {
+            if (node) {
                 node.text = e.target.value;
             }
         });
@@ -1087,6 +1089,8 @@ window.saveGroupConfiguration = async function() {
     const enabled = document.getElementById('grp-enabled').checked;
     const useAiFallback = document.getElementById('grp-ai-fallback').checked;
     const triggerPrefix = document.getElementById('grp-trigger').value.trim();
+    const categoryFooter = document.getElementById('grp-category-footer').value.trim();
+    const contentFooter = document.getElementById('grp-content-footer').value.trim();
     
     // Ambil file referensi tercentang
     const allowedKnowledgeFiles = [];
@@ -1099,6 +1103,8 @@ window.saveGroupConfiguration = async function() {
         enabled,
         useAiFallback,
         triggerPrefix,
+        categoryFooter,
+        contentFooter,
         allowedKnowledgeFiles,
         menuTree: selectedGroupConfig.menuTree
     };
@@ -1175,12 +1181,16 @@ window.applyCloneConfig = async function() {
         
         selectedGroupConfig.useAiFallback = sourceConfig.useAiFallback;
         selectedGroupConfig.triggerPrefix = sourceConfig.triggerPrefix;
+        selectedGroupConfig.categoryFooter = sourceConfig.categoryFooter || '';
+        selectedGroupConfig.contentFooter = sourceConfig.contentFooter || '';
         selectedGroupConfig.allowedKnowledgeFiles = JSON.parse(JSON.stringify(sourceConfig.allowedKnowledgeFiles || []));
         selectedGroupConfig.menuTree = JSON.parse(JSON.stringify(sourceConfig.menuTree));
         
         // Perbarui UI form
         document.getElementById('grp-ai-fallback').checked = selectedGroupConfig.useAiFallback;
         document.getElementById('grp-trigger').value = selectedGroupConfig.triggerPrefix || '';
+        document.getElementById('grp-category-footer').value = selectedGroupConfig.categoryFooter || '';
+        document.getElementById('grp-content-footer').value = selectedGroupConfig.contentFooter || '';
         
         // Perbarui checkboxes
         document.querySelectorAll('.grp-kb-checkbox').forEach(cb => {

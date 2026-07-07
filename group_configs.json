@@ -1,3 +1,32 @@
 {
-  "group_configs": {}
+  "group_configs": {
+    "120363410978236670@g.us": {
+      "groupName": "120363410978236670@g.us",
+      "enabled": true,
+      "useAiFallback": true,
+      "triggerPrefix": "menu",
+      "allowedKnowledgeFiles": [],
+      "menuTree": {
+        "id": "root",
+        "name": "Menu Utama",
+        "type": "category",
+        "children": [
+          {
+            "id": "1783458212083",
+            "name": "capcut",
+            "type": "category",
+            "children": [
+              {
+                "id": "1783458242205",
+                "name": "Menu Baru",
+                "type": "content",
+                "text": "capcut\n10.000",
+                "media": ""
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
 }

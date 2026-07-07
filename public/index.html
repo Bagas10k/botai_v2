@@ -252,6 +252,22 @@
                         </small>
                     </div>
 
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="grp-category-footer">Teks Petunjuk Pilihan (Category Footer)</label>
+                        <input type="text" id="grp-category-footer" placeholder="Default: Silakan pilih menu dengan mengetik angkanya:" class="form-control" style="width: 100%; padding: 8px; border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                        <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 4px;">
+                            Instruksi memilih sub-menu / kategori.
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="grp-content-footer">Teks Petunjuk Kembali (Content Footer)</label>
+                        <textarea id="grp-content-footer" placeholder="Default: Ketik 0 untuk kembali..." rows="2" class="form-control" style="width: 100%; padding: 8px; border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); resize: vertical;"></textarea>
+                        <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 4px;">
+                            Petunjuk kembali ke menu atas setelah membaca konten.
+                        </small>
+                    </div>
+
                     <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
                         <label>Referensi File AI (Knowledge Base)</label>
                         <div id="grp-knowledge-files" style="flex: 1; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; max-height: 150px;">
@@ -303,16 +319,14 @@
                                     </select>
                                 </div>
 
-                                <div id="node-content-fields" class="hidden">
-                                    <div class="form-group" style="margin-bottom: 8px;">
-                                        <label for="node-text" style="font-size: 0.75rem;">Isi Balasan Teks</label>
-                                        <textarea id="node-text" rows="4" class="form-control" style="width: 100%; padding: 6px; font-size: 0.85rem; resize: vertical;"></textarea>
-                                    </div>
-                                    <div class="form-group" style="margin-bottom: 8px;">
-                                        <label for="node-media" style="font-size: 0.75rem;">Lampiran Berkas Media (Nama File)</label>
-                                        <input type="text" id="node-media" class="form-control" placeholder="brosur.pdf" style="width: 100%; padding: 6px; font-size: 0.85rem;">
-                                        <small style="color: var(--text-secondary); font-size: 0.65rem;">Masukkan nama file yang sudah diupload di tab Memory.</small>
-                                    </div>
+                                <div class="form-group" style="margin-bottom: 8px;">
+                                    <label for="node-text" style="font-size: 0.75rem;">Isi Balasan Teks / Deskripsi Menu</label>
+                                    <textarea id="node-text" rows="4" class="form-control" style="width: 100%; padding: 6px; font-size: 0.85rem; resize: vertical;"></textarea>
+                                </div>
+                                <div id="node-media-field" class="hidden" style="margin-bottom: 8px;">
+                                    <label for="node-media" style="font-size: 0.75rem;">Lampiran Berkas Media (Nama File)</label>
+                                    <input type="text" id="node-media" class="form-control" placeholder="brosur.pdf" style="width: 100%; padding: 6px; font-size: 0.85rem;">
+                                    <small style="color: var(--text-secondary); font-size: 0.65rem;">Masukkan nama file yang sudah diupload di tab Memory.</small>
                                 </div>
 
                                 <div style="display: flex; gap: 8px; margin-top: 15px;">
