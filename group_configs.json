@@ -3,9 +3,11 @@
     "120363410978236670@g.us": {
       "groupName": "120363410978236670@g.us",
       "enabled": true,
-      "useAiFallback": true,
+      "useAiFallback": false,
       "triggerPrefix": "menu",
       "allowedKnowledgeFiles": [],
+      "categoryFooter": "Silakan pilih menu",
+      "contentFooter": "bagas store",
       "menuTree": {
         "id": "root",
         "name": "Menu Utama",
@@ -14,16 +16,16 @@
           {
             "id": "1783458212083",
             "name": "capcut",
-            "type": "category",
-            "children": [
-              {
-                "id": "1783458242205",
-                "name": "Menu Baru",
-                "type": "content",
-                "text": "capcut\n10.000",
-                "media": ""
-              }
-            ]
+            "type": "content",
+            "media": "",
+            "text": "capcut\n10k satu bulan"
+          },
+          {
+            "id": "1783459382807",
+            "name": "canva",
+            "type": "content",
+            "text": "10k ",
+            "media": ""
           }
         ]
       }
