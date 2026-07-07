@@ -658,45 +658,49 @@ app.post('/api/memory', (req, res) => {
     }
 });
 
-// POST Restart WhatsApp Client (Refresh QR/Sesi)
+// POST Restart WhatsApp Client (selalu hapus sesi → QR scan baru)
 app.post('/api/whatsapp/restart', async (req, res) => {
     try {
-        const { clearSession } = req.body;
-        console.log(`[API] Menerima instruksi restart WhatsApp (Hapus sesi: ${clearSession || false})`);
-        
-        // Ganti status UI agar dashboard mengetahui proses memuat ulang dimulai
+        console.log('[API] Menerima instruksi restart WhatsApp...');
+
+        // 1. Update status UI
         currentStatus = 'INITIALIZING';
         currentQrCode = null;
         io.emit('whatsapp_status', { status: currentStatus });
-        
-        // 1. Destroy client lama jika ada
+
+        // 2. Kill semua Chrome & hapus LOCK files
+        await cleanupHeadlessChrome();
+
+        // 3. Destroy client lama (max 5 detik)
         if (client) {
             try {
-                await client.destroy();
+                await Promise.race([
+                    client.destroy(),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+                ]);
                 console.log('[API] WhatsApp Client lama berhasil dihancurkan.');
             } catch (err) {
-                console.warn('[API] Peringatan saat menghancurkan client lama:', err.message);
+                console.warn('[API] Destroy timeout/error (diabaikan):', err.message);
+            }
+            client = null;
+        }
+
+        // 4. SELALU hapus seluruh folder sesi agar mulai dari QR baru
+        const sessionPath = path.join(__dirname, 'session');
+        if (fs.existsSync(sessionPath)) {
+            try {
+                fs.rmSync(sessionPath, { recursive: true, force: true });
+                console.log('[API] Folder sesi ./session berhasil dihapus. Siap scan QR baru.');
+            } catch (err) {
+                console.warn('[API] Gagal menghapus sesi (diabaikan):', err.message);
             }
         }
-        
-        // 2. Hapus folder sesi jika diminta (agar menghasilkan QR Code baru)
-        if (clearSession) {
-            const sessionPath = path.join(__dirname, 'session');
-            if (fs.existsSync(sessionPath)) {
-                try {
-                    fs.rmSync(sessionPath, { recursive: true, force: true });
-                    console.log('[API] Folder sesi ./session berhasil dihapus.');
-                } catch (err) {
-                    console.error('[API] Gagal menghapus folder sesi:', err.message);
-                }
-            }
-        }
-        
-        // 3. Re-initialize client
+
+        // 5. Reset flag lalu buat client baru → akan muncul QR Code
+        isRestarting = false;
         console.log('[API] Memulai inisialisasi ulang WhatsApp Client...');
-        await cleanupHeadlessChrome();
         createNewClient();
-        
+
         res.sendStatus(200);
     } catch (err) {
         console.error('[API] Gagal me-restart WhatsApp Client:', err.message);
@@ -741,25 +745,80 @@ function cleanupHeadlessChrome() {
         if (process.platform !== 'win32') {
             return resolve();
         }
-        const cmd = 'powershell -Command "Get-CimInstance Win32_Process -Filter \\"name = \'chrome.exe\'\\" | ForEach-Object { if ($_.CommandLine -like \'*--headless*\') { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue } }"';
-        exec(cmd, (err) => {
-            if (err) {
-                console.warn('[Cleanup] Gagal membersihkan chrome headless:', err.message);
-            } else {
-                console.log('[Cleanup] Berhasil membersihkan proses chrome headless gantung.');
-            }
-            resolve();
+        // Kill semua Chrome headless dulu
+        const killCmd = 'powershell -Command "Get-Process chrome -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue"';
+        exec(killCmd, () => {
+            // Tunggu 1.5 detik agar OS melepaskan lock
+            setTimeout(() => {
+                // Hapus semua file LOCK yang tersisa di folder sesi
+                const sessionPath = path.join(__dirname, 'session');
+                if (fs.existsSync(sessionPath)) {
+                    const removeLocks = (dir) => {
+                        try {
+                            const entries = fs.readdirSync(dir, { withFileTypes: true });
+                            for (const entry of entries) {
+                                const fullPath = path.join(dir, entry.name);
+                                if (entry.isDirectory()) {
+                                    removeLocks(fullPath);
+                                } else if (entry.name === 'LOCK') {
+                                    try { fs.unlinkSync(fullPath); } catch(_) {}
+                                }
+                            }
+                        } catch(_) {}
+                    };
+                    removeLocks(sessionPath);
+                    console.log('[Cleanup] Chrome dihentikan & semua file LOCK sesi dihapus.');
+                } else {
+                    console.log('[Cleanup] Chrome dihentikan (folder sesi belum ada).');
+                }
+                resolve();
+            }, 1500);
         });
     });
 }
 
+let isRestarting = false;
+let initWatchdogTimer = null;
+
 function createNewClient() {
+    if (isRestarting) {
+        console.log('[WA] Inisialisasi sudah berjalan, permintaan duplikat diabaikan.');
+        return;
+    }
+    isRestarting = true;
+
+    // Bersihkan watchdog sebelumnya jika ada
+    if (initWatchdogTimer) {
+        clearTimeout(initWatchdogTimer);
+        initWatchdogTimer = null;
+    }
+
     client = new Client({
         authStrategy: new LocalAuth({ dataPath: './session' }),
         puppeteer: puppeteerOptions
     });
     attachClientListeners();
     client.initialize();
+
+    // Watchdog: jika tidak READY/QR dalam 90 detik, restart otomatis
+    initWatchdogTimer = setTimeout(async () => {
+        if (currentStatus === 'INITIALIZING' || currentStatus === 'DISCONNECTED') {
+            console.log('[Watchdog] WhatsApp terlalu lama di status INITIALIZING. Memulai restart otomatis...');
+            isRestarting = false;
+            await cleanupHeadlessChrome();
+            if (client) {
+                try { 
+                    await Promise.race([
+                        client.destroy(),
+                        new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000))
+                    ]); 
+                } catch(_) {}
+                client = null;
+            }
+            await new Promise(r => setTimeout(r, 1500));
+            createNewClient();
+        }
+    }, 90000);
 }
 
 // State Management
@@ -1855,6 +1914,10 @@ function attachClientListeners() {
         console.log('======================================================\n');
         qrcode.generate(qr, { small: true });
         
+        // Reset flag agar restart berikutnya bisa berjalan
+        isRestarting = false;
+        if (initWatchdogTimer) { clearTimeout(initWatchdogTimer); initWatchdogTimer = null; }
+
         currentStatus = 'QR_RECEIVED';
         currentQrCode = qr;
         io.emit('whatsapp_status', { status: currentStatus });
@@ -1871,6 +1934,11 @@ function attachClientListeners() {
         console.log('\n======================================================');
         console.log('Chatbot WhatsApp AI Lokal (Qwen) Berhasil Tersambung!');
         console.log('======================================================\n');
+
+        // Reset flag dan hapus watchdog karena sudah READY
+        isRestarting = false;
+        if (initWatchdogTimer) { clearTimeout(initWatchdogTimer); initWatchdogTimer = null; }
+
         currentStatus = 'CONNECTED';
         currentQrCode = null;
         io.emit('whatsapp_status', { status: currentStatus });
@@ -1882,6 +1950,8 @@ function attachClientListeners() {
 
     client.on('disconnected', (reason) => {
         console.log('Koneksi WhatsApp terputus:', reason);
+        // Lepas flag saat terputus agar bisa restart lagi
+        isRestarting = false;
         currentStatus = 'DISCONNECTED';
         currentQrCode = null;
         io.emit('whatsapp_status', { status: currentStatus });
