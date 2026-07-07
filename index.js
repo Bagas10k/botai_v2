@@ -21,6 +21,7 @@ const SESSION_DB_FILE = './chat_sessions.json';
 const HISTORY_LOG_FILE = './log_history.json';
 const REMINDERS_FILE = './reminders.json';
 const GROUP_CONFIGS_FILE = './group_configs.json';
+const SHOP_DATA_FILE = './shop_data.json';
 
 // Pastikan file config ada sebelum memulai aplikasi
 if (!fs.existsSync(CONFIG_FILE)) {
@@ -117,6 +118,33 @@ function saveGroupConfigs() {
         fs.writeFileSync(GROUP_CONFIGS_FILE, JSON.stringify(groupConfigs, null, 2), 'utf-8');
     } catch (err) {
         console.error('Gagal menyimpan database konfigurasi grup:', err.message);
+    }
+}
+
+// Shop Data Database (Host Admins, Customers)
+let shopData = { host_admins: [], customers: [] };
+
+function loadShopData() {
+    try {
+        if (fs.existsSync(SHOP_DATA_FILE)) {
+            shopData = JSON.parse(fs.readFileSync(SHOP_DATA_FILE, 'utf-8'));
+            console.log('Database data toko berhasil dimuat.');
+        } else {
+            shopData = { host_admins: [], customers: [] };
+            fs.writeFileSync(SHOP_DATA_FILE, JSON.stringify(shopData, null, 2), 'utf-8');
+            console.log('Database data toko baru diinisialisasi.');
+        }
+    } catch (err) {
+        console.error('Gagal memuat database data toko:', err.message);
+        shopData = { host_admins: [], customers: [] };
+    }
+}
+
+function saveShopData() {
+    try {
+        fs.writeFileSync(SHOP_DATA_FILE, JSON.stringify(shopData, null, 2), 'utf-8');
+    } catch (err) {
+        console.error('Gagal menyimpan database data toko:', err.message);
     }
 }
 
@@ -454,11 +482,15 @@ app.get('/api/group-config/:groupId', (req, res) => {
     }
 });
 
-// REST API: Save Group Configuration
 app.post('/api/group-config/:groupId', (req, res) => {
     try {
         const { groupId } = req.params;
-        const { groupName, enabled, useAiFallback, triggerPrefix, allowedKnowledgeFiles, categoryFooter, contentFooter, menuTree } = req.body;
+        const { 
+            groupName, enabled, useAiFallback, triggerPrefix, allowedKnowledgeFiles, 
+            categoryFooter, contentFooter, menuTree,
+            categoryEmoji, contentEmoji, enableNumberNavigation,
+            universalHeader, universalFooter, autoCloseSchedule, extraTriggers
+        } = req.body;
         
         groupConfigs.group_configs[groupId] = {
             groupName: groupName || groupId,
@@ -468,7 +500,14 @@ app.post('/api/group-config/:groupId', (req, res) => {
             allowedKnowledgeFiles: allowedKnowledgeFiles || [],
             categoryFooter: categoryFooter !== undefined ? categoryFooter : 'Silakan pilih menu dengan mengetik angkanya:',
             contentFooter: contentFooter !== undefined ? contentFooter : 'Ketik *0* untuk kembali ke menu sebelumnya, atau *#* untuk kembali ke menu utama.',
-            menuTree: menuTree || { id: "root", name: "Menu Utama", type: "category", text: "Silakan pilih salah satu opsi di bawah ini:", children: [] }
+            menuTree: menuTree || { id: "root", name: "Menu Utama", type: "category", text: "Silakan pilih salah satu opsi di bawah ini:", children: [] },
+            categoryEmoji: categoryEmoji || '📁',
+            contentEmoji: contentEmoji || '📄',
+            enableNumberNavigation: enableNumberNavigation !== undefined ? enableNumberNavigation : true,
+            universalHeader: universalHeader || '',
+            universalFooter: universalFooter || '',
+            autoCloseSchedule: autoCloseSchedule || { enabled: false, openTime: '08:00', closeTime: '17:00', activeDays: [1,2,3,4,5] },
+            extraTriggers: extraTriggers || []
         };
         
         saveGroupConfigs();
@@ -477,6 +516,110 @@ app.post('/api/group-config/:groupId', (req, res) => {
     } catch (err) {
         console.error('Gagal menyimpan konfigurasi grup:', err.message);
         res.status(500).send('Gagal menyimpan konfigurasi grup: ' + err.message);
+    }
+});
+
+// REST API: Get Host Admins
+app.get('/api/shop/admins', (req, res) => {
+    try {
+        res.json(shopData.host_admins || []);
+    } catch (err) {
+        res.status(500).send('Gagal mengambil Host Admin: ' + err.message);
+    }
+});
+
+// REST API: Save Host Admins
+app.post('/api/shop/admins', (req, res) => {
+    try {
+        const { host_admins } = req.body;
+        shopData.host_admins = host_admins || [];
+        saveShopData();
+        res.sendStatus(200);
+    } catch (err) {
+        res.status(500).send('Gagal menyimpan Host Admin: ' + err.message);
+    }
+});
+
+// REST API: Get Customers
+app.get('/api/shop/customers', (req, res) => {
+    try {
+        res.json(shopData.customers || []);
+    } catch (err) {
+        res.status(500).send('Gagal mengambil daftar pelanggan: ' + err.message);
+    }
+});
+
+// REST API: Save Customers
+app.post('/api/shop/customers', (req, res) => {
+    try {
+        const { customers } = req.body;
+        shopData.customers = customers || [];
+        saveShopData();
+        res.sendStatus(200);
+    } catch (err) {
+        res.status(500).send('Gagal menyimpan pelanggan: ' + err.message);
+    }
+});
+
+// REST API: Get Customer Chat Logs (Isolated)
+app.get('/api/shop/logs/:contactId', (req, res) => {
+    try {
+        const { contactId } = req.params;
+        const session = chatSessions[contactId];
+        if (session && session.history) {
+            res.json(session.history);
+        } else {
+            res.json([]);
+        }
+    } catch (err) {
+        res.status(500).send('Gagal mengambil log obrolan pelanggan: ' + err.message);
+    }
+});
+
+// REST API: Broadcast Promo to all active groups
+app.post('/api/shop/broadcast', async (req, res) => {
+    try {
+        const { message, media } = req.body;
+        if (!message || message.trim() === '') {
+            return res.status(400).send('Pesan broadcast tidak boleh kosong');
+        }
+
+        const activeGroupIds = Object.keys(groupConfigs.group_configs).filter(id => {
+            return groupConfigs.group_configs[id].enabled;
+        });
+
+        if (activeGroupIds.length === 0) {
+            return res.status(400).send('Tidak ada grup aktif untuk dikirimi broadcast');
+        }
+
+        let mediaObj = null;
+        if (media && media.trim() !== '') {
+            const mediaPath = path.join('./media', media.trim());
+            if (fs.existsSync(mediaPath)) {
+                const fileData = fs.readFileSync(mediaPath);
+                const base64Data = fileData.toString('base64');
+                const mimeType = getMimeType(mediaPath);
+                mediaObj = new MessageMedia(mimeType, base64Data, path.basename(mediaPath));
+            }
+        }
+
+        let successCount = 0;
+        for (const groupId of activeGroupIds) {
+            try {
+                await client.sendMessage(groupId, message);
+                if (mediaObj) {
+                    await client.sendMessage(groupId, mediaObj);
+                }
+                successCount++;
+            } catch (err) {
+                console.error(`Gagal mengirim broadcast ke ${groupId}:`, err.message);
+            }
+        }
+
+        res.json({ success: true, count: successCount, total: activeGroupIds.length });
+    } catch (err) {
+        console.error('Gagal menjalankan broadcast:', err.message);
+        res.status(500).send('Gagal mengirim siaran massal: ' + err.message);
     }
 });
 
@@ -1672,6 +1815,7 @@ loadHistory();
 loadSessions();
 loadReminders();
 loadGroupConfigs();
+loadShopData();
 
 // Socket.io Connection Logic
 io.on('connection', (socket) => {
@@ -1714,6 +1858,7 @@ function attachClientListeners() {
         
         startDailyReportScheduler();
         startReminderScheduler();
+        startGroupScheduleScheduler();
     });
 
     client.on('disconnected', (reason) => {
@@ -1822,6 +1967,95 @@ function startDailyReportScheduler() {
     }, 30000); // Cek setiap 30 detik
 }
 
+const groupOpenStates = new Map();
+
+async function checkGroupSchedules() {
+    try {
+        if (currentStatus !== 'CONNECTED') return;
+
+        const now = new Date();
+        const timeParts = now.toLocaleTimeString('en-US', {
+            timeZone: 'Asia/Jakarta',
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit'
+        }).split(':');
+        
+        if (timeParts.length < 2) return;
+        const timeStr = `${timeParts[0].padStart(2, '0')}:${timeParts[1].padStart(2, '0')}`;
+
+        // Dapatkan nama hari WIB (e.g. "Monday")
+        const weekdayStr = now.toLocaleDateString('en-US', {
+            timeZone: 'Asia/Jakarta',
+            weekday: 'long'
+        });
+
+        const dayMap = {
+            'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7
+        };
+        const currentDayVal = dayMap[weekdayStr] || now.getDay();
+
+        const groupIds = Object.keys(groupConfigs.group_configs);
+        for (const groupId of groupIds) {
+            const cfg = groupConfigs.group_configs[groupId];
+            if (!cfg || !cfg.enabled || !cfg.autoCloseSchedule || !cfg.autoCloseSchedule.enabled) {
+                continue;
+            }
+
+            const schedule = cfg.autoCloseSchedule;
+            const openTime = schedule.openTime; // "08:00"
+            const closeTime = schedule.closeTime; // "17:00"
+            const activeDays = schedule.activeDays || []; // [1, 2, 3, 4, 5]
+
+            let shouldBeOpen = true;
+            
+            if (activeDays.length > 0 && !activeDays.includes(currentDayVal)) {
+                shouldBeOpen = false;
+            } else {
+                if (openTime && closeTime) {
+                    if (timeStr < openTime || timeStr >= closeTime) {
+                        shouldBeOpen = false;
+                    }
+                }
+            }
+
+            const prevState = groupOpenStates.get(groupId);
+
+            if (prevState !== shouldBeOpen) {
+                groupOpenStates.set(groupId, shouldBeOpen);
+                
+                if (prevState !== undefined) {
+                    try {
+                        const chat = await client.getChatById(groupId);
+                        await chat.setMessagesAdminsOnly(!shouldBeOpen);
+                        
+                        const msgText = shouldBeOpen 
+                            ? "🔔 *Pemberitahuan Otomatis:* Jam operasional toko telah dimulai. Grup dibuka kembali untuk umum. Silakan ajukan pesanan Anda!"
+                            : "🔔 *Pemberitahuan Otomatis:* Jam operasional toko telah berakhir. Grup ditutup sementara. Hanya Admin yang dapat mengirim pesan.";
+                        
+                        await client.sendMessage(groupId, msgText);
+                        console.log(`[Scheduler] Status Grup ${cfg.groupName || groupId} diubah ke ${shouldBeOpen ? 'BUKA' : 'TUTUP'}.`);
+                    } catch (err) {
+                        console.error(`[Scheduler] Gagal mengubah setelan grup ${groupId}:`, err.message);
+                    }
+                } else {
+                    console.log(`[Scheduler] Sinkronisasi awal status Grup ${cfg.groupName || groupId}: ${shouldBeOpen ? 'BUKA' : 'TUTUP'}.`);
+                }
+            }
+        }
+    } catch (err) {
+        console.error('[Scheduler Error] Gagal memeriksa jadwal grup:', err.message);
+    }
+}
+
+function startGroupScheduleScheduler() {
+    console.log('[Scheduler] Memulai scheduler otomatisasi buka/tutup grup...');
+    // Jalankan pengecekan pertama setelah 5 detik startup
+    setTimeout(checkGroupSchedules, 5000);
+    // Jalankan setiap 60 detik
+    setInterval(checkGroupSchedules, 60000);
+}
+
 
 
 // Sesi navigasi menu interaktif anggota di grup
@@ -1856,7 +2090,18 @@ function findNodeByName(node, name, parentPath = []) {
 
 // Helper: Render menu untuk grup
 function renderGroupMenuMessage(node, cfg = {}) {
-    let msg = `📂 *${node.name}*\n\n`;
+    const catEmoji = cfg.categoryEmoji || '📁';
+    const conEmoji = cfg.contentEmoji || '📄';
+    const showNumber = cfg.enableNumberNavigation !== false;
+    
+    let msg = '';
+    
+    // Prepend universal header
+    if (cfg.universalHeader && cfg.universalHeader.trim() !== '') {
+        msg += `${cfg.universalHeader.trim()}\n\n`;
+    }
+    
+    msg += `${catEmoji} *${node.name}*\n\n`;
     
     // Tampilkan deskripsi kategori jika ada
     if (node.text && node.text.trim() !== '') {
@@ -1867,16 +2112,24 @@ function renderGroupMenuMessage(node, cfg = {}) {
         const optionIntro = cfg.categoryFooter || "Silakan pilih menu dengan mengetik angkanya:";
         msg += `${optionIntro}\n\n`;
         node.children.forEach((child, index) => {
-            const emoji = child.type === 'category' ? '📁' : '📄';
-            msg += `${index + 1}️⃣ ${emoji} *${child.name}*\n`;
+            const numEmoji = showNumber ? `*${index + 1}*️⃣ ` : '🔹 ';
+            const emoji = child.type === 'category' ? catEmoji : conEmoji;
+            const statusSuffix = (child.type === 'content' && child.status && child.status.trim() !== '') ? ` [_${child.status}_]` : '';
+            msg += `${numEmoji}${emoji} *${child.name}*${statusSuffix}\n`;
         });
         
         // Hanya tampilkan navigasi jika bukan root menu utama
         if (node.id !== 'root') {
-            msg += "\n*0*️⃣ 🔙 *Kembali ke Menu Sebelumnya*";
-            msg += "\n*#*️⃣ 🏠 *Kembali ke Menu Utama*";
+            msg += `\n${showNumber ? '*0*️⃣ ' : '🔙 '}*Kembali ke Menu Sebelumnya*`;
+            msg += `\n${showNumber ? '*#*️⃣ ' : '🏠 '}*Kembali ke Menu Utama*`;
         }
     }
+    
+    // Append universal footer
+    if (cfg.universalFooter && cfg.universalFooter.trim() !== '') {
+        msg += `\n\n${cfg.universalFooter.trim()}`;
+    }
+    
     return msg;
 }
 
@@ -1941,13 +2194,134 @@ async function handleIncomingMessage(msg) {
         // JIKA CHAT GRUP
         const groupId = chatId;
         const cfg = groupConfigs.group_configs[groupId];
+        const senderId = msg.author || msg.from;
+        const cleanBoss = config.boss_number ? (config.boss_number.replace(/\D/g, '') + '@c.us') : '';
+
+        // Tentukan apakah pengirim adalah Host Admin
+        const isSenderHostAdmin = (() => {
+            if (isSenderBoss) return true;
+            const sender = senderId.split('@')[0].replace(/\D/g, '') + '@c.us';
+            const senderLid = senderId.split('@')[0].replace(/\D/g, '') + '@lid';
+            return (shopData.host_admins || []).some(admin => {
+                const cleanAdmin = admin.replace(/\D/g, '');
+                return cleanAdmin === sender.split('@')[0] || cleanAdmin === senderLid.split('@')[0];
+            });
+        })();
+
+        // Intersepsi perintah Host Admin
+        if (isSenderHostAdmin && userMessage.startsWith('!')) {
+            const cmd = userMessage.toLowerCase().trim();
+            if (cmd === '!bot on') {
+                if (!groupConfigs.group_configs[groupId]) {
+                    groupConfigs.group_configs[groupId] = {
+                        groupName: groupId,
+                        enabled: true,
+                        useAiFallback: true,
+                        triggerPrefix: '',
+                        allowedKnowledgeFiles: [],
+                        categoryFooter: 'Silakan pilih menu dengan mengetik angkanya:',
+                        contentFooter: 'Ketik *0* untuk kembali ke menu sebelumnya, atau *#* untuk kembali ke menu utama.',
+                        menuTree: { id: "root", name: "Menu Utama", type: "category", text: "Silakan pilih salah satu opsi di bawah ini:", children: [] }
+                    };
+                } else {
+                    groupConfigs.group_configs[groupId].enabled = true;
+                }
+                saveGroupConfigs();
+                await msg.reply("✅ *Bot Diaktifkan:* Bot WhatsApp sekarang aktif merespons di grup ini.");
+                return;
+            } else if (cmd === '!bot off') {
+                if (groupConfigs.group_configs[groupId]) {
+                    groupConfigs.group_configs[groupId].enabled = false;
+                    saveGroupConfigs();
+                }
+                await msg.reply("⚠️ *Bot Dinonaktifkan:* Bot WhatsApp berhenti merespons di grup ini.");
+                return;
+            } else if (cmd === '!toko buka') {
+                try {
+                    const chat = await client.getChatById(groupId);
+                    await chat.setMessagesAdminsOnly(false);
+                    await msg.reply("🔓 *Toko Dibuka Manual:* Grup WhatsApp dibuka kembali untuk umum.");
+                } catch (err) {
+                    await msg.reply("❌ Gagal membuka grup: " + err.message);
+                }
+                return;
+            } else if (cmd === '!toko tutup') {
+                try {
+                    const chat = await client.getChatById(groupId);
+                    await chat.setMessagesAdminsOnly(true);
+                    await msg.reply("🔒 *Toko Ditutup Manual:* Grup WhatsApp ditutup (hanya admin yang dapat berkirim pesan).");
+                } catch (err) {
+                    await msg.reply("❌ Gagal menutup grup: " + err.message);
+                }
+                return;
+            } else if (cmd === '!pelanggan') {
+                let replyText = "👥 *Daftar Pelanggan Toko:*\n\n";
+                if (shopData.customers && shopData.customers.length > 0) {
+                    shopData.customers.forEach((c, idx) => {
+                        replyText += `${idx + 1}. *${c.name}* (${c.phone})\n   Catatan: ${c.notes || '-'}\n`;
+                    });
+                } else {
+                    replyText += "Belum ada pelanggan terdaftar.";
+                }
+                await msg.reply(replyText);
+                return;
+            }
+        }
         
         // Abaikan grup jika tidak terdaftar atau dinonaktifkan
         if (!cfg || !cfg.enabled) {
             return;
         }
+
+        // Tambahkan pengirim ke daftar pelanggan jika belum terdaftar
+        const senderPhone = senderId.split('@')[0];
+        const customerExists = (shopData.customers || []).some(c => c.phone.replace(/\D/g, '') === senderPhone);
+        if (!customerExists && !isSenderHostAdmin && senderId !== 'status@broadcast') {
+            try {
+                const contact = await msg.getContact();
+                const customerName = contact.pushname || contact.name || `Pelanggan ${senderPhone}`;
+                shopData.customers = shopData.customers || [];
+                shopData.customers.push({
+                    name: customerName,
+                    phone: senderPhone,
+                    notes: 'Ditambahkan otomatis oleh interaksi bot',
+                    orderCount: 0
+                });
+                saveShopData();
+            } catch (err) {
+                console.error('Gagal merekam data pelanggan otomatis:', err.message);
+            }
+        }
+
+        // Deteksi pesan pesanan/pembelian dan beri notifikasi ke Host Admin
+        const orderKeywords = /\b(beli|pesan|order|daftar|payment|transfer|cod|harga|pembayaran|list|checkout|boking|booking)\b/i;
+        if (orderKeywords.test(userMessage) && !isSenderHostAdmin && senderId !== 'status@broadcast') {
+            try {
+                const contact = await msg.getContact();
+                const customerName = contact.pushname || contact.name || `Pelanggan ${senderPhone}`;
+                const notifyText = `🔔 *Notifikasi Pesanan Masuk Baru!*\n\n` +
+                                   `*Pelanggan:* ${customerName} (wa.me/${senderPhone})\n` +
+                                   `*Grup:* ${cfg.groupName || groupId}\n` +
+                                   `*Pesan:* "${userMessage}"`;
+                
+                const adminTargets = new Set();
+                if (cleanBoss) adminTargets.add(cleanBoss);
+                (shopData.host_admins || []).forEach(admin => {
+                    adminTargets.add(admin.replace(/\D/g, '') + '@c.us');
+                });
+
+                for (const adminTarget of adminTargets) {
+                    try {
+                        await client.sendMessage(adminTarget, notifyText);
+                    } catch (err) {
+                        console.error(`Gagal mengirim notifikasi pesanan ke ${adminTarget}:`, err.message);
+                    }
+                }
+            } catch (err) {
+                console.error('Gagal memproses notifikasi pesanan otomatis:', err.message);
+            }
+        }
         
-        const senderId = msg.author || msg.from;
         const sessionKey = `${groupId}_${senderId}`;
         const text = userMessage.toLowerCase().trim();
         
@@ -1994,7 +2368,9 @@ async function handleIncomingMessage(msg) {
                 const replyMsg = renderGroupMenuMessage(matchedNode, cfg);
                 await msg.reply(replyMsg);
             } else {
-                let replyText = `📄 *${matchedNode.name}*\n\n${matchedNode.text}`;
+                const conEmoji = cfg.contentEmoji || '📄';
+                const statusSuffix = (matchedNode.status && matchedNode.status.trim() !== '') ? ` [_${matchedNode.status}_]` : '';
+                let replyText = `${conEmoji} *${matchedNode.name}*${statusSuffix}\n\n${matchedNode.text}`;
                 const footerText = cfg.contentFooter || `_Ketik *0* untuk kembali ke menu sebelumnya, atau *#* untuk kembali ke menu utama._`;
                 replyText += `\n\n${footerText}`;
                 
@@ -2019,6 +2395,27 @@ async function handleIncomingMessage(msg) {
                 timestamp: Date.now()
             });
             return;
+        }
+
+        // Cek jika mencocokkan kata kunci tambahan (extraTriggers)
+        if (cfg.extraTriggers && Array.isArray(cfg.extraTriggers)) {
+            const matchedTrigger = cfg.extraTriggers.find(t => {
+                if (!t.keyword) return false;
+                const kw = t.keyword.toLowerCase().trim();
+                return text === kw;
+            });
+
+            if (matchedTrigger) {
+                await msg.reply(matchedTrigger.reply);
+                
+                io.emit('message_log', {
+                    chatId: groupId,
+                    body: `[Extra Trigger: ${matchedTrigger.keyword}]`,
+                    type: 'outgoing',
+                    timestamp: Date.now()
+                });
+                return;
+            }
         }
         
         // Cek jika ada sesi menu aktif (berlaku 2 menit)
@@ -2053,44 +2450,48 @@ async function handleIncomingMessage(msg) {
                 return;
             }
             
-            // Coba urai angka pilihan
-            const choiceIndex = parseInt(text, 10) - 1;
-            const currentNode = findNodeById(cfg.menuTree, session.currentNodeId) || cfg.menuTree;
-            
-            if (currentNode && currentNode.children && choiceIndex >= 0 && choiceIndex < currentNode.children.length) {
-                const chosenNode = currentNode.children[choiceIndex];
+            // Coba urai angka pilihan (hanya jika navigasi angka aktif)
+            if (cfg.enableNumberNavigation !== false) {
+                const choiceIndex = parseInt(text, 10) - 1;
+                const currentNode = findNodeById(cfg.menuTree, session.currentNodeId) || cfg.menuTree;
                 
-                if (chosenNode.type === 'category') {
-                    // Masuk sub-menu
-                    session.parentIds.push(session.currentNodeId);
-                    session.currentNodeId = chosenNode.id;
+                if (currentNode && currentNode.children && choiceIndex >= 0 && choiceIndex < currentNode.children.length) {
+                    const chosenNode = currentNode.children[choiceIndex];
                     
-                    const replyMsg = renderGroupMenuMessage(chosenNode, cfg);
-                    await msg.reply(replyMsg);
-                } else {
-                    // Leaf Node: Kirim konten teks + media
-                    let replyText = `📄 *${chosenNode.name}*\n\n${chosenNode.text}`;
-                    const footerText = cfg.contentFooter || `_Ketik *0* untuk kembali ke menu sebelumnya, atau *#* untuk kembali ke menu utama._`;
-                    replyText += `\n\n${footerText}`;
-                    
-                    await msg.reply(replyText);
-                    
-                    if (chosenNode.media && chosenNode.media.trim() !== '') {
-                        const mediaPath = path.join('./media', chosenNode.media.trim());
-                        if (fs.existsSync(mediaPath)) {
-                            const fileData = fs.readFileSync(mediaPath);
-                            const base64Data = fileData.toString('base64');
-                            const mimeType = getMimeType(mediaPath);
-                            const mediaObj = new MessageMedia(mimeType, base64Data, path.basename(mediaPath));
-                            await client.sendMessage(groupId, mediaObj, { quotedMessageId: msg.id._serialized });
+                    if (chosenNode.type === 'category') {
+                        // Masuk sub-menu
+                        session.parentIds.push(session.currentNodeId);
+                        session.currentNodeId = chosenNode.id;
+                        
+                        const replyMsg = renderGroupMenuMessage(chosenNode, cfg);
+                        await msg.reply(replyMsg);
+                    } else {
+                        // Leaf Node: Kirim konten teks + media
+                        const conEmoji = cfg.contentEmoji || '📄';
+                        const statusSuffix = (chosenNode.status && chosenNode.status.trim() !== '') ? ` [_${chosenNode.status}_]` : '';
+                        let replyText = `${conEmoji} *${chosenNode.name}*${statusSuffix}\n\n${chosenNode.text}`;
+                        const footerText = cfg.contentFooter || `_Ketik *0* untuk kembali ke menu sebelumnya, atau *#* untuk kembali ke menu utama._`;
+                        replyText += `\n\n${footerText}`;
+                        
+                        await msg.reply(replyText);
+                        
+                        if (chosenNode.media && chosenNode.media.trim() !== '') {
+                            const mediaPath = path.join('./media', chosenNode.media.trim());
+                            if (fs.existsSync(mediaPath)) {
+                                const fileData = fs.readFileSync(mediaPath);
+                                const base64Data = fileData.toString('base64');
+                                const mimeType = getMimeType(mediaPath);
+                                const mediaObj = new MessageMedia(mimeType, base64Data, path.basename(mediaPath));
+                                await client.sendMessage(groupId, mediaObj, { quotedMessageId: msg.id._serialized });
+                            }
                         }
                     }
-                }
-                return;
-            } else {
-                if (/^\d+$/.test(text)) {
-                    await msg.reply(`⚠️ Pilihan tidak valid. Silakan ketik angka (1-${currentNode.children ? currentNode.children.length : 0}), ketik *0* untuk kembali, atau *#* untuk ke menu utama.`);
                     return;
+                } else {
+                    if (/^\d+$/.test(text)) {
+                        await msg.reply(`⚠️ Pilihan tidak valid. Silakan ketik angka (1-${currentNode.children ? currentNode.children.length : 0}), ketik *0* untuk kembali, atau *#* untuk ke menu utama.`);
+                        return;
+                    }
                 }
             }
         }

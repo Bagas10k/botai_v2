@@ -268,6 +268,84 @@
                         </small>
                     </div>
 
+                    <!-- Kustomisasi Emoji & Navigasi -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="grp-category-emoji">Emoji Kategori</label>
+                            <input type="text" id="grp-category-emoji" placeholder="📁" class="form-control" style="width: 100%; padding: 8px; border-radius: 6px; text-align: center; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="grp-content-emoji">Emoji Konten</label>
+                            <input type="text" id="grp-content-emoji" placeholder="📄" class="form-control" style="width: 100%; padding: 8px; border-radius: 6px; text-align: center; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="grp-number-nav-enable" checked>
+                            <span>Aktifkan Navigasi Angka (1, 2, dst)</span>
+                        </label>
+                        <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 4px;">
+                            Jika dimatikan, pengguna harus mengetik nama menu secara langsung.
+                        </small>
+                    </div>
+
+                    <!-- Header & Footer Universal -->
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="grp-universal-header">Header Balasan Universal (Teks Pembuka)</label>
+                        <textarea id="grp-universal-header" placeholder="Contoh: Selamat datang di Toko Kami! (kosongkan jika tidak butuh)" rows="2" class="form-control" style="width: 100%; padding: 8px; border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); resize: vertical;"></textarea>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label for="grp-universal-footer">Footer Balasan Universal (Teks Penutup)</label>
+                        <textarea id="grp-universal-footer" placeholder="Contoh: Terimakasih telah menghubungi kami. (kosongkan jika tidak butuh)" rows="2" class="form-control" style="width: 100%; padding: 8px; border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); resize: vertical;"></textarea>
+                    </div>
+
+                    <!-- Jadwal Operasional Buka/Tutup Grup -->
+                    <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 15px; background: rgba(0,0,0,0.1);">
+                        <label class="checkbox-container" style="font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <input type="checkbox" id="grp-auto-close-enable" onchange="toggleScheduleFields()">
+                            <span>Jadwal Tutup Grup Otomatis</span>
+                        </label>
+                        
+                        <div id="grp-schedule-fields" class="hidden" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                            <div style="display: flex; gap: 10px;">
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.75rem;">Jam Buka</label>
+                                    <input type="time" id="grp-open-time" value="08:00" class="form-control" style="width: 100%; padding: 6px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.75rem;">Jam Tutup</label>
+                                    <input type="time" id="grp-close-time" value="17:00" class="form-control" style="width: 100%; padding: 6px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label style="font-size: 0.75rem; display: block; margin-bottom: 4px;">Hari Aktif</label>
+                                <div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.75rem;">
+                                    <label style="display: flex; align-items: center; gap: 2px;"><input type="checkbox" value="1" class="grp-active-day-cb" checked> Sen</label>
+                                    <label style="display: flex; align-items: center; gap: 2px;"><input type="checkbox" value="2" class="grp-active-day-cb" checked> Sel</label>
+                                    <label style="display: flex; align-items: center; gap: 2px;"><input type="checkbox" value="3" class="grp-active-day-cb" checked> Rab</label>
+                                    <label style="display: flex; align-items: center; gap: 2px;"><input type="checkbox" value="4" class="grp-active-day-cb" checked> Kam</label>
+                                    <label style="display: flex; align-items: center; gap: 2px;"><input type="checkbox" value="5" class="grp-active-day-cb" checked> Jum</label>
+                                    <label style="display: flex; align-items: center; gap: 2px;"><input type="checkbox" value="6" class="grp-active-day-cb"> Sab</label>
+                                    <label style="display: flex; align-items: center; gap: 2px;"><input type="checkbox" value="7" class="grp-active-day-cb"> Min</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trigger Kata Kunci Kustom Luar Menu -->
+                    <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 15px; background: rgba(0,0,0,0.1);">
+                        <label style="font-weight: bold; display: block; margin-bottom: 6px;">Kata Kunci Kustom (Luar Menu)</label>
+                        <div id="grp-extra-triggers-list" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;">
+                            <!-- Rendered dynamically -->
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="addExtraTriggerRow()" style="font-size: 0.75rem; padding: 4px 8px; width: auto;">
+                            <i data-lucide="plus" style="width: 10px; height: 10px; display: inline-align: middle;"></i> Tambah Kata Kunci
+                        </button>
+                    </div>
+
                     <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
                         <label>Referensi File AI (Knowledge Base)</label>
                         <div id="grp-knowledge-files" style="flex: 1; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; max-height: 150px;">
@@ -328,6 +406,15 @@
                                     <input type="text" id="node-media" class="form-control" placeholder="brosur.pdf" style="width: 100%; padding: 6px; font-size: 0.85rem;">
                                     <small style="color: var(--text-secondary); font-size: 0.65rem;">Masukkan nama file yang sudah diupload di tab Memory.</small>
                                 </div>
+                                <div id="node-status-field" class="hidden" style="margin-bottom: 8px;">
+                                    <label for="node-status" style="font-size: 0.75rem;">Status Konten (Stok/Ketersediaan)</label>
+                                    <select id="node-status" class="form-control" style="width: 100%; padding: 6px; font-size: 0.85rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                                        <option value="">(Tanpa Status)</option>
+                                        <option value="Tersedia">🟢 Tersedia</option>
+                                        <option value="Habis">🔴 Habis</option>
+                                        <option value="Pre-order">🟡 Pre-order</option>
+                                    </select>
+                                </div>
 
                                 <div style="display: flex; gap: 8px; margin-top: 15px;">
                                     <button id="btn-add-child" class="btn btn-secondary" onclick="addChildNode()" style="flex: 1; font-size: 0.75rem; padding: 5px;">
@@ -372,6 +459,95 @@
             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
                 <button class="btn btn-secondary" onclick="closeCloneConfigModal()">Batal</button>
                 <button class="btn btn-primary" onclick="applyCloneConfig()">Terapkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TAB 5 — TOKO
+    ══════════════════════════════════════════ -->
+    <div id="tab-shop" class="tab-content hidden">
+        <main class="dashboard-grid shop-grid" style="display: grid; grid-template-columns: 350px 1fr; gap: 20px; height: calc(100vh - 120px);">
+            
+            <!-- KOLOM KIRI: Management Host Admin & Broadcast -->
+            <div style="display: flex; flex-direction: column; gap: 20px; overflow: hidden;">
+                <!-- PANEL: Host Admin -->
+                <section class="panel card" style="display: flex; flex-direction: column; flex: 1; min-height: 250px; overflow: hidden; padding: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h2 style="margin: 0; font-size: 1.1rem;"><i data-lucide="shield-alert"></i> Host Admin</h2>
+                        <button class="btn btn-secondary btn-icon" onclick="loadHostAdmins()" title="Refresh Admin">
+                            <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i>
+                        </button>
+                    </div>
+                    <p class="card-subtitle" style="margin-top: -10px; margin-bottom: 12px; font-size: 0.8rem;">Daftar admin WhatsApp yang dapat mengontrol bot.</p>
+                    
+                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                        <input type="text" id="shop-admin-input" placeholder="Contoh: 628123456789" class="form-control" style="flex: 1; padding: 6px 10px; font-size: 0.85rem; border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                        <button class="btn btn-primary" onclick="addHostAdmin()" style="padding: 6px 12px; font-size: 0.85rem;">Tambah</button>
+                    </div>
+                    
+                    <div id="shop-admins-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                        <!-- Rendered dynamically -->
+                        <p style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; margin-top: 30px;">Belum ada Host Admin...</p>
+                    </div>
+                </section>
+
+                <!-- PANEL: Broadcast Massal -->
+                <section class="panel card" style="padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+                    <h2 style="margin: 0; font-size: 1.1rem;"><i data-lucide="megaphone"></i> Siaran Massal (Broadcast)</h2>
+                    <p class="card-subtitle" style="margin-top: -5px; font-size: 0.8rem;">Kirim pengumuman/promo ke seluruh grup aktif.</p>
+                    
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="broadcast-msg" style="font-size: 0.75rem;">Pesan Siaran</label>
+                        <textarea id="broadcast-msg" rows="3" placeholder="Tulis pesan promosi Anda di sini..." class="form-control" style="width: 100%; padding: 8px; font-size: 0.85rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); resize: vertical;"></textarea>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="broadcast-media" style="font-size: 0.75rem;">File Media Pendukung (Opsional)</label>
+                        <input type="text" id="broadcast-media" placeholder="Contoh: brosur.pdf / promo.jpg" class="form-control" style="width: 100%; padding: 6px; font-size: 0.85rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="sendBroadcast()" style="width: 100%; padding: 8px; font-size: 0.85rem; margin-top: 5px;">
+                        <i data-lucide="send" style="width: 12px; height: 12px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i> Kirim Siaran
+                    </button>
+                </section>
+            </div>
+
+            <!-- KOLOM KANAN: Manajemen Pelanggan -->
+            <section class="panel card" style="display: flex; flex-direction: column; overflow: hidden; padding: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="margin: 0; font-size: 1.1rem;"><i data-lucide="book-open"></i> Manajemen Pelanggan</h2>
+                    <button class="btn btn-secondary btn-icon" onclick="loadCustomersList()" title="Refresh Pelanggan">
+                        <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i>
+                    </button>
+                </div>
+                <p class="card-subtitle" style="margin-top: -10px; margin-bottom: 15px; font-size: 0.8rem;">Daftar pelanggan toko yang terdeteksi oleh sistem.</p>
+                
+                <div id="shop-customers-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Renders dynamically -->
+                    <p style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; margin-top: 50px;">Memuat daftar pelanggan...</p>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL: Riwayat Obrolan Terisolasi Kontak -->
+    <div id="shop-chat-modal" class="modal hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+        <div class="card" style="width: 500px; max-width: 90%; height: 600px; display: flex; flex-direction: column; padding: 20px; overflow: hidden;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                <h3 id="shop-chat-modal-title" style="margin: 0; font-size: 1.1rem;"><i data-lucide="message-square"></i> Riwayat Obrolan</h3>
+                <button class="btn btn-secondary btn-icon" onclick="closeShopChatModal()" style="border: none; background: transparent; padding: 4px;">
+                    <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+                </button>
+            </div>
+            
+            <div id="shop-chat-messages-container" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 8px; margin-bottom: 15px;">
+                <!-- Obrolan dirender di sini -->
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeShopChatModal()">Tutup</button>
             </div>
         </div>
     </div>
@@ -618,6 +794,10 @@
         <button id="btn-tab-groups" class="ios-tab-btn" onclick="switchTab('groups')">
             <i data-lucide="users"></i>
             <span>Groups</span>
+        </button>
+        <button id="btn-tab-shop" class="ios-tab-btn" onclick="switchTab('shop')">
+            <i data-lucide="store"></i>
+            <span>Toko</span>
         </button>
         <button id="btn-tab-settings" class="ios-tab-btn" onclick="switchTab('settings')">
             <i data-lucide="settings-2"></i>

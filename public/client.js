@@ -84,35 +84,45 @@ window.switchTab = function(tabId) {
     const tabMemory = document.getElementById('tab-memory');
     const tabSettings = document.getElementById('tab-settings');
     const tabGroups = document.getElementById('tab-groups');
+    const tabShop = document.getElementById('tab-shop');
+    
     const btnMonitor = document.getElementById('btn-tab-monitor');
     const btnMemory = document.getElementById('btn-tab-memory');
     const btnSettings = document.getElementById('btn-tab-settings');
     const btnGroups = document.getElementById('btn-tab-groups');
+    const btnShop = document.getElementById('btn-tab-shop');
     
     // Hide all
-    tabMonitor.classList.add('hidden');
-    tabMemory.classList.add('hidden');
-    tabSettings.classList.add('hidden');
-    tabGroups.classList.add('hidden');
+    if (tabMonitor) tabMonitor.classList.add('hidden');
+    if (tabMemory) tabMemory.classList.add('hidden');
+    if (tabSettings) tabSettings.classList.add('hidden');
+    if (tabGroups) tabGroups.classList.add('hidden');
+    if (tabShop) tabShop.classList.add('hidden');
     
-    btnMonitor.classList.remove('active');
-    btnMemory.classList.remove('active');
-    btnSettings.classList.remove('active');
-    btnGroups.classList.remove('active');
+    if (btnMonitor) btnMonitor.classList.remove('active');
+    if (btnMemory) btnMemory.classList.remove('active');
+    if (btnSettings) btnSettings.classList.remove('active');
+    if (btnGroups) btnGroups.classList.remove('active');
+    if (btnShop) btnShop.classList.remove('active');
     
     if (tabId === 'monitor') {
-        tabMonitor.classList.remove('hidden');
-        btnMonitor.classList.add('active');
+        if (tabMonitor) tabMonitor.classList.remove('hidden');
+        if (btnMonitor) btnMonitor.classList.add('active');
     } else if (tabId === 'memory') {
-        tabMemory.classList.remove('hidden');
-        btnMemory.classList.add('active');
+        if (tabMemory) tabMemory.classList.remove('hidden');
+        if (btnMemory) btnMemory.classList.add('active');
     } else if (tabId === 'settings') {
-        tabSettings.classList.remove('hidden');
-        btnSettings.classList.add('active');
+        if (tabSettings) tabSettings.classList.remove('hidden');
+        if (btnSettings) btnSettings.classList.add('active');
     } else if (tabId === 'groups') {
-        tabGroups.classList.remove('hidden');
-        btnGroups.classList.add('active');
+        if (tabGroups) tabGroups.classList.remove('hidden');
+        if (btnGroups) btnGroups.classList.add('active');
         loadGroupsList();
+    } else if (tabId === 'shop') {
+        if (tabShop) tabShop.classList.remove('hidden');
+        if (btnShop) btnShop.classList.add('active');
+        loadHostAdmins();
+        loadCustomersList();
     }
 };// Real-time Socket.io Connection Events
 socket.on('connect', () => {
@@ -785,6 +795,31 @@ window.selectGroup = async function(groupId) {
         document.getElementById('grp-category-footer').value = selectedGroupConfig.categoryFooter || 'Silakan pilih menu dengan mengetik angkanya:';
         document.getElementById('grp-content-footer').value = selectedGroupConfig.contentFooter || 'Ketik *0* untuk kembali ke menu sebelumnya, atau *#* untuk kembali ke menu utama.';
         
+        // Emojis, Number navigation, Headers/Footers
+        document.getElementById('grp-category-emoji').value = selectedGroupConfig.categoryEmoji || '📁';
+        document.getElementById('grp-content-emoji').value = selectedGroupConfig.contentEmoji || '📄';
+        document.getElementById('grp-number-nav-enable').checked = selectedGroupConfig.enableNumberNavigation !== false;
+        document.getElementById('grp-universal-header').value = selectedGroupConfig.universalHeader || '';
+        document.getElementById('grp-universal-footer').value = selectedGroupConfig.universalFooter || '';
+        
+        // Auto Close Schedule
+        const schedule = selectedGroupConfig.autoCloseSchedule || { enabled: false, openTime: '08:00', closeTime: '17:00', activeDays: [1,2,3,4,5] };
+        document.getElementById('grp-auto-close-enable').checked = schedule.enabled;
+        document.getElementById('grp-open-time').value = schedule.openTime || '08:00';
+        document.getElementById('grp-close-time').value = schedule.closeTime || '17:00';
+        
+        // Day checkboxes
+        const activeDays = schedule.activeDays || [1,2,3,4,5];
+        document.querySelectorAll('.grp-active-day-cb').forEach(cb => {
+            cb.checked = activeDays.includes(parseInt(cb.value, 10));
+        });
+        
+        // Toggle schedule UI fields visibility
+        toggleScheduleFields();
+
+        // Extra Triggers
+        renderExtraTriggersList(selectedGroupConfig.extraTriggers || []);
+        
         // Load knowledge files list (dengan checkbox keaktifan)
         await loadKnowledgeFilesChecklist();
         
@@ -891,9 +926,20 @@ function createNodeHTML(node, depth) {
     
     const iconName = node.type === 'category' ? 'folder' : 'file-text';
     const color = node.type === 'category' ? '#ff9f0a' : '#0a84ff';
+    
+    const statusBadge = node.type === 'content' 
+        ? `<span class="status-badge" onclick="quickToggleStatus(event, '${node.id}')" style="font-size: 0.65rem; margin-left: 6px; padding: 2px 6px; border-radius: 4px; font-weight: bold; background: ${
+            node.status === 'Tersedia' ? 'rgba(52, 199, 89, 0.15); color: #30d158; border: 1px solid rgba(52, 199, 89, 0.3);' :
+            node.status === 'Habis' ? 'rgba(255, 69, 58, 0.15); color: #ff453a; border: 1px solid rgba(255, 69, 58, 0.3);' :
+            node.status === 'Pre-order' ? 'rgba(255, 159, 10, 0.15); color: #ff9f0a; border: 1px solid rgba(255, 159, 10, 0.3);' :
+            'rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.1);'
+        }">${node.status || 'Atur Status'}</span>`
+        : '';
+
     header.innerHTML = `
         <i data-lucide="${iconName}" style="width: 14px; height: 14px; color: ${color};"></i>
         <span style="font-weight: ${node.type === 'category' ? '600' : '400'}; flex: 1;">${node.name}</span>
+        ${statusBadge}
         ${node.type === 'category' ? `<span style="font-size:0.7rem; color:var(--text-secondary); padding: 0 4px; background:rgba(255,255,255,0.05); border-radius:3px;">${node.children ? node.children.length : 0}</span>` : ''}
     `;
     
@@ -911,6 +957,27 @@ function createNodeHTML(node, depth) {
     
     return div;
 }
+
+window.quickToggleStatus = function(e, nodeId) {
+    e.stopPropagation(); // Cegah selectNode terpanggil!
+    if (!selectedGroupConfig) return;
+    
+    const node = findNodeInTree(selectedGroupConfig.menuTree, nodeId);
+    if (node && node.type === 'content') {
+        const statuses = ['', 'Tersedia', 'Habis', 'Pre-order'];
+        const currentIdx = statuses.indexOf(node.status || '');
+        const nextIdx = (currentIdx + 1) % statuses.length;
+        node.status = statuses[nextIdx];
+        
+        // Re-render visual tree
+        renderMenuTreeVisual();
+        
+        // Jika node ini sedang dipilih, sinkronkan nilai di form edit kanan juga!
+        if (selectedNodeId === nodeId) {
+            document.getElementById('node-status').value = node.status;
+        }
+    }
+};
 
 // Memilih Node Menu untuk diedit
 window.selectTreeNode = function(nodeId) {
@@ -934,8 +1001,12 @@ window.selectTreeNode = function(nodeId) {
     document.getElementById('node-text').value = node.text || '';
     if (node.type === 'content') {
         document.getElementById('node-media').value = node.media || '';
+        document.getElementById('node-status-field').classList.remove('hidden');
+        document.getElementById('node-status').value = node.status || '';
     } else {
         document.getElementById('node-media').value = '';
+        document.getElementById('node-status-field').classList.add('hidden');
+        document.getElementById('node-status').value = '';
     }
 };
 
@@ -943,13 +1014,16 @@ window.selectTreeNode = function(nodeId) {
 window.toggleNodeFields = function() {
     const nodeType = document.getElementById('node-type').value;
     const mediaField = document.getElementById('node-media-field');
+    const statusField = document.getElementById('node-status-field');
     const btnAddChild = document.getElementById('btn-add-child');
     
     if (nodeType === 'category') {
         if (mediaField) mediaField.classList.add('hidden');
+        if (statusField) statusField.classList.add('hidden');
         if (btnAddChild) btnAddChild.classList.remove('hidden');
     } else {
         if (mediaField) mediaField.classList.remove('hidden');
+        if (statusField) statusField.classList.remove('hidden');
         if (btnAddChild) btnAddChild.classList.add('hidden');
     }
     
@@ -961,8 +1035,10 @@ window.toggleNodeFields = function() {
             if (nodeType === 'category') {
                 node.children = node.children || [];
                 delete node.media;
+                delete node.status;
             } else {
                 node.media = "";
+                node.status = "";
                 delete node.children;
             }
             renderMenuTreeVisual();
@@ -1022,6 +1098,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const node = findNodeInTree(selectedGroupConfig.menuTree, selectedNodeId);
             if (node && node.type === 'content') {
                 node.media = e.target.value;
+            }
+        });
+    }
+    
+    const inputStatus = document.getElementById('node-status');
+    if (inputStatus) {
+        inputStatus.addEventListener('change', (e) => {
+            if (!selectedGroupId || !selectedNodeId) return;
+            const node = findNodeInTree(selectedGroupConfig.menuTree, selectedNodeId);
+            if (node && node.type === 'content') {
+                node.status = e.target.value;
+                renderMenuTreeVisual();
             }
         });
     }
@@ -1092,6 +1180,34 @@ window.saveGroupConfiguration = async function() {
     const categoryFooter = document.getElementById('grp-category-footer').value.trim();
     const contentFooter = document.getElementById('grp-content-footer').value.trim();
     
+    const categoryEmoji = document.getElementById('grp-category-emoji').value.trim() || '📁';
+    const contentEmoji = document.getElementById('grp-content-emoji').value.trim() || '📄';
+    const enableNumberNavigation = document.getElementById('grp-number-nav-enable').checked;
+    const universalHeader = document.getElementById('grp-universal-header').value.trim();
+    const universalFooter = document.getElementById('grp-universal-footer').value.trim();
+    
+    // Auto Close Schedule
+    const activeDays = [];
+    document.querySelectorAll('.grp-active-day-cb:checked').forEach(cb => {
+        activeDays.push(parseInt(cb.value, 10));
+    });
+    const autoCloseSchedule = {
+        enabled: document.getElementById('grp-auto-close-enable').checked,
+        openTime: document.getElementById('grp-open-time').value,
+        closeTime: document.getElementById('grp-close-time').value,
+        activeDays
+    };
+    
+    // Extra Triggers
+    const extraTriggers = [];
+    document.querySelectorAll('.extra-trigger-row').forEach(row => {
+        const keyword = row.querySelector('.grp-et-keyword').value.trim();
+        const reply = row.querySelector('.grp-et-reply').value.trim();
+        if (keyword && reply) {
+            extraTriggers.push({ keyword, reply });
+        }
+    });
+
     // Ambil file referensi tercentang
     const allowedKnowledgeFiles = [];
     document.querySelectorAll('.grp-kb-checkbox:checked').forEach(cb => {
@@ -1106,7 +1222,14 @@ window.saveGroupConfiguration = async function() {
         categoryFooter,
         contentFooter,
         allowedKnowledgeFiles,
-        menuTree: selectedGroupConfig.menuTree
+        menuTree: selectedGroupConfig.menuTree,
+        categoryEmoji,
+        contentEmoji,
+        enableNumberNavigation,
+        universalHeader,
+        universalFooter,
+        autoCloseSchedule,
+        extraTriggers
     };
     
     try {
@@ -1207,5 +1330,340 @@ window.applyCloneConfig = async function() {
     } catch (err) {
         console.error('Error applyCloneConfig:', err);
         alert('Gagal menyalin konfigurasi: ' + err.message);
+    }
+};
+
+// ══════════════════════════════════════════
+// TOKO / SHOP MANAGER HELPER FUNCTIONS
+// ══════════════════════════════════════════
+
+window.toggleScheduleFields = function() {
+    const isEnabled = document.getElementById('grp-auto-close-enable').checked;
+    const fields = document.getElementById('grp-schedule-fields');
+    if (fields) {
+        if (isEnabled) {
+            fields.classList.remove('hidden');
+        } else {
+            fields.classList.add('hidden');
+        }
+    }
+};
+
+window.renderExtraTriggersList = function(triggers = []) {
+    const list = document.getElementById('grp-extra-triggers-list');
+    if (!list) return;
+    list.innerHTML = '';
+    
+    triggers.forEach((t, idx) => {
+        const row = document.createElement('div');
+        row.style = 'display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; background: var(--bg-primary); margin-bottom: 6px;';
+        row.className = 'extra-trigger-row';
+        
+        row.innerHTML = `
+            <div style="display: flex; gap: 6px;">
+                <input type="text" placeholder="Kata Kunci" class="form-control grp-et-keyword" value="${t.keyword || ''}" style="flex: 1; padding: 4px 8px; font-size: 0.8rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                <button type="button" class="btn btn-secondary btn-icon" onclick="deleteExtraTriggerRow(this)" style="padding: 4px; color: #ff453a; border-color: rgba(255,69,58,0.2); background: transparent;">
+                    <i data-lucide="trash" style="width: 12px; height: 12px;"></i>
+                </button>
+            </div>
+            <textarea placeholder="Respon Teks Balasan" class="form-control grp-et-reply" rows="2" style="width: 100%; padding: 4px 8px; font-size: 0.8rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); resize: vertical;">${t.reply || ''}</textarea>
+        `;
+        list.appendChild(row);
+    });
+    
+    if (window.lucide) lucide.createIcons();
+};
+
+window.addExtraTriggerRow = function() {
+    const list = document.getElementById('grp-extra-triggers-list');
+    if (!list) return;
+    
+    const row = document.createElement('div');
+    row.style = 'display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; background: var(--bg-primary); margin-bottom: 6px;';
+    row.className = 'extra-trigger-row';
+    
+    row.innerHTML = `
+        <div style="display: flex; gap: 6px;">
+            <input type="text" placeholder="Kata Kunci" class="form-control grp-et-keyword" style="flex: 1; padding: 4px 8px; font-size: 0.8rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+            <button type="button" class="btn btn-secondary btn-icon" onclick="deleteExtraTriggerRow(this)" style="padding: 4px; color: #ff453a; border-color: rgba(255,69,58,0.2); background: transparent;">
+                <i data-lucide="trash" style="width: 12px; height: 12px;"></i>
+            </button>
+        </div>
+        <textarea placeholder="Respon Teks Balasan" class="form-control grp-et-reply" rows="2" style="width: 100%; padding: 4px 8px; font-size: 0.8rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); resize: vertical;"></textarea>
+    `;
+    list.appendChild(row);
+    
+    if (window.lucide) lucide.createIcons();
+};
+
+window.deleteExtraTriggerRow = function(btn) {
+    const row = btn.closest('.extra-trigger-row');
+    if (row) row.remove();
+};
+
+// Host Admin
+let activeHostAdmins = [];
+
+window.loadHostAdmins = async function() {
+    try {
+        const res = await fetch('/api/shop/admins');
+        if (!res.ok) throw new Error('Gagal memuat Host Admin');
+        activeHostAdmins = await res.json();
+        
+        const list = document.getElementById('shop-admins-list');
+        if (!list) return;
+        list.innerHTML = '';
+        
+        if (activeHostAdmins.length === 0) {
+            list.innerHTML = `<p style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; margin-top: 30px;">Belum ada Host Admin...</p>`;
+            return;
+        }
+        
+        activeHostAdmins.forEach(admin => {
+            const cleanAdmin = admin.replace(/\D/g, '');
+            const row = document.createElement('div');
+            row.style = 'display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-secondary); margin-bottom: 6px;';
+            row.innerHTML = `
+                <span style="font-weight: 500; font-size: 0.85rem;"><i data-lucide="shield" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px; color: #30d158;"></i> ${cleanAdmin}</span>
+                <button class="btn btn-secondary btn-icon" onclick="deleteHostAdmin('${admin}')" style="padding: 4px; color: #ff453a; border-color: rgba(255,69,58,0.2); background: transparent;">
+                    <i data-lucide="trash" style="width: 12px; height: 12px;"></i>
+                </button>
+            `;
+            list.appendChild(row);
+        });
+        
+        if (window.lucide) lucide.createIcons();
+    } catch (err) {
+        console.error('Error loadHostAdmins:', err);
+    }
+};
+
+window.addHostAdmin = async function() {
+    const input = document.getElementById('shop-admin-input');
+    const val = input.value.trim().replace(/\D/g, '');
+    if (!val || val.length < 9) {
+        alert('Format nomor tidak valid! Masukkan angka saja, contoh: 628123456789');
+        return;
+    }
+    
+    const formatted = val + '@c.us';
+    if (activeHostAdmins.includes(formatted)) {
+        alert('Nomor ini sudah terdaftar sebagai Host Admin!');
+        return;
+    }
+    
+    activeHostAdmins.push(formatted);
+    
+    try {
+        const res = await fetch('/api/shop/admins', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ host_admins: activeHostAdmins })
+        });
+        
+        if (res.ok) {
+            input.value = '';
+            loadHostAdmins();
+        } else {
+            throw new Error(await res.text());
+        }
+    } catch (err) {
+        alert('Gagal menambah Host Admin: ' + err.message);
+    }
+};
+
+window.deleteHostAdmin = async function(admin) {
+    if (!confirm('Apakah Anda yakin ingin menghapus nomor ini dari Host Admin?')) return;
+    
+    activeHostAdmins = activeHostAdmins.filter(a => a !== admin);
+    
+    try {
+        const res = await fetch('/api/shop/admins', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ host_admins: activeHostAdmins })
+        });
+        
+        if (res.ok) {
+            loadHostAdmins();
+        } else {
+            throw new Error(await res.text());
+        }
+    } catch (err) {
+        alert('Gagal menghapus Host Admin: ' + err.message);
+    }
+};
+
+// Customers
+let activeCustomers = [];
+
+window.loadCustomersList = async function() {
+    try {
+        const res = await fetch('/api/shop/customers');
+        if (!res.ok) throw new Error('Gagal memuat pelanggan');
+        activeCustomers = await res.json();
+        
+        const list = document.getElementById('shop-customers-list');
+        if (!list) return;
+        list.innerHTML = '';
+        
+        if (activeCustomers.length === 0) {
+            list.innerHTML = `<p style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-top: 50px;">Belum ada pelanggan terdeteksi.</p>`;
+            return;
+        }
+        
+        activeCustomers.forEach((cust, idx) => {
+            const card = document.createElement('div');
+            card.style = 'border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--bg-secondary); margin-bottom: 10px;';
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <input type="text" id="cust-name-${idx}" value="${cust.name}" style="font-weight: bold; font-size: 0.95rem; border: none; background: transparent; color: var(--text-primary); border-bottom: 1px dashed var(--border-color); padding: 2px;">
+                        <a href="https://wa.me/${cust.phone}" target="_blank" style="font-size: 0.75rem; color: #30d158; text-decoration: none;">wa.me/${cust.phone}</a>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn btn-secondary" onclick="viewCustomerChatLogs('${cust.phone}')" style="font-size: 0.75rem; padding: 4px 8px; display: flex; align-items: center; gap: 4px;">
+                            <i data-lucide="message-square" style="width: 12px; height: 12px;"></i> Lihat Chat
+                        </button>
+                        <button class="btn btn-primary" onclick="saveCustomerInfo(${idx})" style="font-size: 0.75rem; padding: 4px 8px;">Simpan</button>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.7rem; color: var(--text-secondary);">Catatan / Alamat / Detail Pesanan</label>
+                        <input type="text" id="cust-notes-${idx}" value="${cust.notes || ''}" placeholder="Tulis catatan di sini..." class="form-control" style="width: 100%; padding: 4px 8px; font-size: 0.8rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px;">
+                    </div>
+                    <div style="width: 100px;">
+                        <label style="font-size: 0.7rem; color: var(--text-secondary);">Jumlah Order</label>
+                        <input type="number" id="cust-order-${idx}" value="${cust.orderCount || 0}" class="form-control" style="width: 100%; padding: 4px 8px; font-size: 0.8rem; text-align: center; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px;">
+                    </div>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+        
+        if (window.lucide) lucide.createIcons();
+    } catch (err) {
+        console.error('Error loadCustomersList:', err);
+    }
+};
+
+window.saveCustomerInfo = async function(idx) {
+    const cust = activeCustomers[idx];
+    if (!cust) return;
+    
+    const newName = document.getElementById(`cust-name-${idx}`).value.trim();
+    const newNotes = document.getElementById(`cust-notes-${idx}`).value.trim();
+    const newOrderCount = parseInt(document.getElementById(`cust-order-${idx}`).value, 10) || 0;
+    
+    cust.name = newName;
+    cust.notes = newNotes;
+    cust.orderCount = newOrderCount;
+    
+    try {
+        const res = await fetch('/api/shop/customers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ customers: activeCustomers })
+        });
+        
+        if (res.ok) {
+            alert('Data pelanggan berhasil disimpan!');
+            loadCustomersList();
+        } else {
+            throw new Error(await res.text());
+        }
+    } catch (err) {
+        alert('Gagal menyimpan data pelanggan: ' + err.message);
+    }
+};
+
+// Isolated Chat Modal
+window.viewCustomerChatLogs = async function(phone) {
+    const contactId = phone.includes('@') ? phone : `${phone}@c.us`;
+    const cleanId = contactId.split('@')[0];
+    
+    document.getElementById('shop-chat-modal-title').innerHTML = `<i data-lucide="message-square" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 6px;"></i> Chat: wa.me/${cleanId}`;
+    if (window.lucide) lucide.createIcons();
+    
+    const container = document.getElementById('shop-chat-messages-container');
+    container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); font-size:0.85rem; margin-top:50px;">Memuat riwayat chat...</p>';
+    
+    document.getElementById('shop-chat-modal').classList.remove('hidden');
+    
+    try {
+        const res = await fetch(`/api/shop/logs/${contactId}`);
+        if (!res.ok) throw new Error('Gagal mengambil riwayat chat');
+        
+        const logs = await res.json();
+        container.innerHTML = '';
+        
+        if (logs.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); font-size:0.85rem; margin-top:50px;">Belum ada riwayat chat dengan nomor ini.</p>';
+            return;
+        }
+        
+        logs.forEach(msg => {
+            const isBot = msg.role === 'model' || msg.role === 'assistant';
+            const bubble = document.createElement('div');
+            bubble.style = `
+                max-width: 80%;
+                padding: 8px 12px;
+                border-radius: 8px;
+                font-size: 0.85rem;
+                line-height: 1.4;
+                margin-bottom: 8px;
+                word-wrap: break-word;
+                ${isBot 
+                    ? 'align-self: flex-end; background: #34c759; color: #fff; border-bottom-right-radius: 2px;' 
+                    : 'align-self: flex-start; background: var(--bg-primary); color: var(--text-primary); border-bottom-left-radius: 2px; border: 1px solid var(--border-color);'
+                }
+            `;
+            bubble.innerHTML = msg.content ? msg.content.replace(/\n/g, '<br>') : '';
+            container.appendChild(bubble);
+        });
+        
+        container.scrollTop = container.scrollHeight;
+    } catch (err) {
+        container.innerHTML = `<p style="text-align:center; color:#ff453a; font-size:0.85rem; margin-top:50px;">Gagal memuat log: ${err.message}</p>`;
+    }
+};
+
+window.closeShopChatModal = function() {
+    document.getElementById('shop-chat-modal').classList.add('hidden');
+};
+
+// Broadcast
+window.sendBroadcast = async function() {
+    const msgInput = document.getElementById('broadcast-msg');
+    const mediaInput = document.getElementById('broadcast-media');
+    
+    const message = msgInput.value.trim();
+    const media = mediaInput.value.trim();
+    
+    if (!message) {
+        alert('Tulis pesan broadcast terlebih dahulu!');
+        return;
+    }
+    
+    if (!confirm('Apakah Anda yakin ingin mengirim pesan siaran ini ke SELURUH grup WhatsApp aktif?')) return;
+    
+    try {
+        const res = await fetch('/api/shop/broadcast', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, media })
+        });
+        
+        if (res.ok) {
+            const result = await res.json();
+            alert(`Siaran massal berhasil dikirim ke ${result.count} dari total ${result.total} grup aktif!`);
+            msgInput.value = '';
+            mediaInput.value = '';
+        } else {
+            throw new Error(await res.text());
+        }
+    } catch (err) {
+        alert('Gagal mengirim siaran massal: ' + err.message);
     }
 };
