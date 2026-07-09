@@ -1,74 +1,60 @@
 =========================================
-DOKUMEN UTAMA: INFORMASI TOKO, FAQ, KATALOG, & SOP PELAYANAN
-BAGAS OFFICE COFFEE & CO.
+DOKUMEN UTAMA: INFORMASI TOKO & FAQ CHATBOT AI
+JAJAN DIGITAL - PENYEDIA APK PREMIUM
 =========================================
 
 -----------------------------------------
 1. PROFIL TOKO & OPERASIONAL
 -----------------------------------------
-- Nama Toko: Bagas Office Coffee & Co.
-- Jam Operasional: Buka Setiap Hari (Senin - Minggu) pukul 08:00 - 22:00 WIB.
-- Alamat Fisik: Jl. Jenderal Sudirman No. 45, Lantai Dasar, Jakarta Pusat (Samping Gedung Bagas Office).
-- Layanan yang Tersedia:
-  * Dine-in (Makan di tempat)
-  * Takeaway (Bawa pulang)
-  * Delivery (Pengantaran via Kurir Instan Gojek / Grab)
+- Nama Toko: Jajan Digital
+- Platform: Grup WhatsApp berbasis Bot & AI Asisten.
+- Jam Operasional: Buka Setiap Hari (Senin - Minggu) pukul 08:00 - 22:00 WIB (Otomatisasi buka/tutup grup).
+- Produk Utama: Menyediakan berbagai macam aplikasi premium (APK Premium) legal, murah, cepat, dan terpercaya.
 
 -----------------------------------------
-2. METODE PEMBAYARAN & REKENING RESMI
+2. METODE ALUR PEMESANAN (POV PEMBELI)
 -----------------------------------------
-Pembayaran pesanan dilakukan secara non-tunai (Transfer Bank) ke rekening resmi berikut:
-- Bank BCA
-  * No. Rekening: 123-456-7890
-  * Atas Nama: Bagas Office
-- QRIS Toko:
-  * Tersedia dengan scan barcode QRIS yang dikirimkan oleh admin/CS saat proses checkout.
-  * Menerima pembayaran via GoPay, OVO, Dana, LinkAja, ShopeePay, dan M-Banking.
-
-*Catatan Keamanan:* Jangan melakukan transfer selain ke nomor rekening resmi di atas. Harap kirimkan bukti transfer ke WhatsApp ini setelah melakukan pembayaran.
+Ikuti langkah-langkah mudah berikut untuk memesan produk di Jajan Digital:
+1. Ketik "list" (untuk memicu bot menampilkan katalog menu produk kami).
+2. Pilih produk mana yang ingin dibeli dengan mengetik angka menu untuk melihat harga dan spesifikasi lengkap.
+3. Ketik "bayar" (untuk menampilkan QRIS pembayaran resmi toko).
+4. Lakukan transfer pembayaran sesuai nominal, lalu kirimkan Foto Bukti Pembayaran ke dalam GRUP ini.
+5. Admin/CS akan memverifikasi pembayaran Anda (dan mengetik perintah .proses / .done).
+6. Detail akun/produk premium Anda akan dikirimkan secara langsung dan privat oleh Admin melalui Chat Pribadi (PC) Anda.
 
 -----------------------------------------
-3. DAFTAR KATALOG PRODUK & HARGA
+3. PANDUAN SPESIFIKASI AKUN (PRIVATE VS SHARING)
 -----------------------------------------
-A. Kategori Kopi (Signature Coffee)
-- Kopi Latte Premium (Hot/Ice) - Rp 18.000
-  * Espresso premium dicampur susu segar dengan foam lembut. Bisa disajikan panas atau dingin.
-- Espresso Double Shot - Rp 12.000
-  * Ekstraksi kopi Arabika murni 100% yang pekat dan kuat.
-- Kopi Susu Gula Aren (Ice) - Rp 15.000
-  * Kopi susu kekinian dengan manisnya gula aren murni yang pas di lidah. Terlaris!
-
-B. Kategori Camilan (Bakery & Snacks)
-- Croissant Butter Premium - Rp 20.000
-  * Roti pastry Prancis yang renyah di luar, lembut di dalam dengan cita rasa mentega murni yang gurih.
-- Brownies Cokelat Fudgy - Rp 15.000
-  * Kue brownies cokelat panggang padat dengan tekstur lembut di dalam dan taburan choco chips melimpah.
+Banyak customer yang menanyakan apa perbedaan akun Private dan Sharing. Berikut adalah penjelasannya:
+- AKUN PRIVATE:
+  * Merupakan 1 akun fresh (baru) yang dibuat khusus hanya untuk 1 pembeli.
+  * Pembeli memiliki kontrol penuh dan aman.
+  * Biasanya mendukung login di beberapa device (sesuai limit aplikasi).
+- AKUN SHARING:
+  * Merupakan 1 akun premium yang digunakan bersama-sama dengan pengguna (user) lainnya sejak awal dibeli.
+  * Harganya jauh lebih murah dibanding private.
+  * Batasan (Rule) Penting: Akun sharing HANYA boleh login di maksimal 1 Device (perangkat). Jika melanggar, garansi akan hangus.
 
 -----------------------------------------
-4. FAQ (PERTANYAAN YANG SERING DIAJUKAN)
+4. PENGHITUNGAN DURASI HARI (1 BULAN)
 -----------------------------------------
-Q: Bagaimana cara memesan produk lewat WhatsApp ini?
-A: Sangat mudah! Cukup ketik pesan dengan format: pesan: [Nama Produk] [Jumlah]
-   Contoh: pesan: Kopi Susu Gula Aren 2, Croissant Butter 1
-   Setelah itu, asisten AI kami akan mencatat pesanan Anda secara otomatis.
-
-Q: Apakah ada promo yang sedang berlangsung?
-A: Ya! Kami memiliki promo "Friday Coffee Rush" yaitu Beli 2 Kopi Latte gratis 1 Croissant Butter Premium setiap hari Jumat mulai pukul 14:00 hingga 17:00 WIB.
-
-Q: Berapa lama pesanan saya akan disiapkan?
-A: Minuman disiapkan dalam waktu 3-5 menit. Makanan hangat/bakery disiapkan dalam waktu 5-10 menit. Untuk pesanan delivery, waktu pengantaran tergantung dari jarak kurir ke alamat Anda.
-
-Q: Bagaimana jika pesanan yang diterima salah atau kurang?
-A: Silakan langsung kirimkan foto produk yang kurang/salah ke chat WhatsApp ini, Admin CS kami akan segera mengirimkan gantinya secara gratis.
+- Durasi 25 - 30 hari dihitung penuh sebagai 1 Bulan.
+- Garansi produk bervariasi antara 25 hari hingga full 30 hari (tergantung aplikasi).
 
 -----------------------------------------
-5. SOP PELAYANAN PELANGGAN (UNTUK BOT AI & CS ADMIN)
+5. PENYELESAIAN MASALAH CUSTOMER (FAQ & SOP)
 -----------------------------------------
-- Sapaan Pelanggan: Selalu panggil pelanggan dengan sebutan "Kak", "Kakak", atau "Kak [Nama Pelanggan]". JANGAN pernah memanggil dengan sebutan "Bos" atau "Bro".
-- Kesopanan & Nada Bicara: Gunakan tata bahasa Indonesia yang baik, sopan, ramah, dan solutif.
-- Penanganan Pelanggan Bingung:
-  * Jika pelanggan bingung ingin memesan apa, tawarkan menu terlaris kami seperti "Kopi Susu Gula Aren" atau "Croissant Butter".
-  * Arahkan pelanggan untuk mengetik kata *menu* atau angka menu untuk membuka katalog interaktif.
-- Alur Penanganan Bukti Transfer / Pembayaran:
-  * Jika pelanggan mengirimkan gambar bukti transfer, infokan bahwa pesanan mereka akan segera diverifikasi oleh Admin.
-  * Admin akan membalas chat bukti transfer tersebut dengan mengetik *.proses* atau *.done* untuk mencetak invoice pembayaran resmi secara otomatis.
+Q: Saya bingung bagaimana cara memesannya?
+A: Jangan khawatir! Ikuti panduan langkah demi langkah (step-by-step) berikut:
+   1. Ketik "list" di grup ini untuk melihat daftar aplikasi premium yang kami sediakan.
+   2. Pilih nomor atau nama produk yang ingin Anda beli (misal ketik "1" atau "Netflix") untuk melihat detail harga.
+   3. Ketik "bayar" di grup ini untuk memunculkan gambar barcode QRIS pembayaran.
+   4. Lakukan pembayaran ke QRIS tersebut, lalu upload/kirim bukti transfer pembayaran Anda ke dalam grup ini.
+   5. Tunggu admin melakukan konfirmasi pembayaran Anda di grup.
+   6. Setelah dikonfirmasi, cek pesan pribadi (PC) Anda. Admin akan mengirimkan detail akun/produk Anda di sana!
+
+Q: Apa perbedaan akun Private dan Sharing?
+A: Jika Kakak membeli paket PRIVATE, Kakak akan mendapatkan 1 akun fresh khusus untuk Kakak sendiri (lebih aman dan leluasa). Jika Kakak membeli paket SHARING, 1 akun akan digunakan bersama-sama dengan pembeli lain, sehingga harganya jauh lebih murah, namun memiliki batasan maksimal login hanya boleh di 1 device saja.
+
+Q: Berapa lama durasi garansi 1 bulan?
+A: Durasi 1 bulan kami hitung selama 25 - 30 hari penggunaan aktif, dengan jaminan garansi penuh jika terjadi kendala premium hilang selama masa aktif tersebut (sesuai ketentuan garansi masing-masing produk).

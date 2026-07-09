@@ -3962,7 +3962,7 @@ async function handleIncomingMessage(msg) {
     let activeCfg = cfg;
     if (!activeCfg && !isGroup) {
         activeCfg = {
-            groupName: "Default Shop",
+            groupName: "Jajan Digital",
             enabled: true,
             useAiFallback: true,
             triggerPrefix: '',
