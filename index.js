@@ -1174,7 +1174,7 @@ function createNewClient() {
             await new Promise(r => setTimeout(r, 1500));
             createNewClient();
         }
-    }, 90000);
+    }, 180000);
 }
 
 // State Management
