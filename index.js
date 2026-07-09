@@ -1320,7 +1320,9 @@ app.post('/api/whatsapp/restart', async (req, res) => {
 
 // Setup WhatsApp Client dengan Puppeteer Arguments untuk stabilitas RAM
 const puppeteerOptions = {
-    handleSIGINT: false,
+    handleSIGINT: true,
+    handleSIGTERM: true,
+    handleSIGHUP: true,
     args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
