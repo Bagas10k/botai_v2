@@ -4508,8 +4508,20 @@ async function handleIncomingMessage(msg) {
         }
         
         // AI Fallback khusus grup diabaikan jika fiturnya dinonaktifkan di konfigurasi grup
-        if (isGroup && (!cfg || !cfg.useAiFallback)) {
-            return;
+        if (isGroup) {
+            if (!cfg || !cfg.useAiFallback) {
+                return;
+            }
+            // Di grup, AI Fallback HANYA merespon jika bot di-mention (@) oleh pengirim
+            const botId = client.info ? client.info.wid._serialized : null;
+            const botNumber = client.info ? client.info.wid.user : null;
+            const isMentioned = botId && (
+                (msg.mentionedIds && msg.mentionedIds.includes(botId)) ||
+                (botNumber && msg.body.includes(botNumber))
+            );
+            if (!isMentioned) {
+                return; // Abaikan chat biasa jika bot tidak di-mention
+            }
         }
 
     // MEKANISME PROCESSING LOCK DINONAKTIFKAN ATAS PERMINTAAN USER
