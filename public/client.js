@@ -1366,6 +1366,30 @@ window.saveGroupConfiguration = async function() {
     }
 };
 
+window.deleteGroupConfiguration = async function() {
+    if (!selectedGroupId) return;
+    if (!confirm('Apakah Anda yakin ingin menghapus konfigurasi grup ini? Semua menu produk grup ini akan dihapus dan di-reset.')) return;
+    
+    try {
+        const res = await fetch(`/api/group-config/${selectedGroupId}`, {
+            method: 'DELETE'
+        });
+        if (res.ok) {
+            alert('Konfigurasi grup berhasil dihapus!');
+            selectedGroupId = null;
+            selectedGroupConfig = null;
+            document.getElementById('group-editor-panel').classList.add('hidden');
+            loadGroupsList();
+        } else {
+            const data = await res.json();
+            alert('Gagal menghapus konfigurasi: ' + (data.error || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error('Error deleteGroupConfiguration:', err);
+        alert('Terjadi kesalahan koneksi saat menghapus.');
+    }
+};
+
 // ══════════════════════════════════════════
 // LOGIKA DUPLIKASI (CLONING) KONFIGURASI
 // ══════════════════════════════════════════

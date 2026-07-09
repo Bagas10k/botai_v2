@@ -795,6 +795,25 @@ app.post('/api/group-config/:groupId', (req, res) => {
     }
 });
 
+app.delete('/api/group-config/:groupId', (req, res) => {
+    try {
+        const { groupId } = req.params;
+        if (groupConfigs.group_configs[groupId]) {
+            const groupName = groupConfigs.group_configs[groupId].groupName || groupId;
+            delete groupConfigs.group_configs[groupId];
+            saveGroupConfigs();
+            io.emit('group_config_updated', { groupId });
+            console.log(`Konfigurasi grup ${groupName} berhasil dihapus.`);
+            res.json({ success: true });
+        } else {
+            res.status(404).json({ error: 'Konfigurasi grup tidak ditemukan' });
+        }
+    } catch (err) {
+        console.error('Gagal menghapus konfigurasi grup:', err.message);
+        res.status(500).json({ error: 'Gagal menghapus konfigurasi grup: ' + err.message });
+    }
+});
+
 // REST API: Get Pinned Chats (potential Host Admins)
 app.get('/api/shop/pinned-chats', async (req, res) => {
     try {
@@ -4488,8 +4507,8 @@ async function handleIncomingMessage(msg) {
             }
         }
         
-        // AI Fallback khusus grup dinonaktifkan agar di grup hanya merespon list menu dan kata kunci
-        if (isGroup) {
+        // AI Fallback khusus grup diabaikan jika fiturnya dinonaktifkan di konfigurasi grup
+        if (isGroup && (!cfg || !cfg.useAiFallback)) {
             return;
         }
 
