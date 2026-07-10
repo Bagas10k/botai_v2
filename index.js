@@ -680,7 +680,7 @@ app.post('/api/config', (req, res) => {
 app.get('/api/groups', async (req, res) => {
     try {
         let groups = [];
-        if (currentStatus === 'CONNECTED') {
+        if (currentStatus === 'CONNECTED' && client) {
             const chats = await client.getChats();
             const liveGroups = chats.filter(c => c.isGroup);
             groups = liveGroups.map(g => ({
