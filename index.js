@@ -671,6 +671,18 @@ app.post('/api/config', (req, res) => {
             apiEndpoint = apiEndpoint.replace(/\/+$/, '') + '/v1/chat/completions';
         }
 
+        // Auto-correct path Chrome sesuai OS jika didefinisikan (Windows vs Linux)
+        if (process.platform === 'linux') {
+            if (config.puppeteer_executable_path && (config.puppeteer_executable_path.includes('\\') || config.puppeteer_executable_path.toLowerCase().includes('program files') || config.puppeteer_executable_path.toLowerCase().includes('chrome.exe'))) {
+                config.puppeteer_executable_path = '/usr/bin/google-chrome-stable';
+            }
+        } else if (process.platform === 'win32') {
+            if (config.puppeteer_executable_path && config.puppeteer_executable_path.includes('/')) {
+                // Biarkan kosong agar auto-detect default Windows jika path Linux di-upload ke Windows
+                config.puppeteer_executable_path = '';
+            }
+        }
+
         fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf-8');
         console.log('Konfigurasi berhasil diperbarui.');
         res.sendStatus(200);
@@ -1397,8 +1409,23 @@ app.post('/api/import', uploadZip.single('backup'), async (req, res) => {
     const ALLOWED_ROOTS = ['config.json', 'database.sqlite', 'presets.json', 'knowledge', 'media'];
     if (importSession) ALLOWED_ROOTS.push('session');
 
+    // Cek apakah database.sqlite ada dalam ZIP. Jika ada, tutup koneksi agar tidak corrupt/lock.
+    let needsDbReopen = false;
+    
     try {
         console.log(`[Import] Memulai restore dari: ${req.file.originalname}`);
+
+        // Tutup koneksi SQLite sebelum ekstraksi jika database.sqlite ada di whitelist
+        if (db) {
+            try {
+                await db.close();
+                db = null;
+                needsDbReopen = true;
+                console.log('[Import] Koneksi database SQLite ditutup sementara demi keamanan restore.');
+            } catch (err) {
+                console.warn('[Import] Peringatan saat menutup database:', err.message);
+            }
+        }
 
         const zip = fs.createReadStream(zipPath).pipe(unzipper.Parse({ forceStream: true }));
 
@@ -1459,12 +1486,34 @@ app.post('/api/import', uploadZip.single('backup'), async (req, res) => {
         // Hapus file ZIP sementara
         try { fs.unlinkSync(zipPath); } catch(_) {}
 
+        // Buka kembali koneksi SQLite jika sebelumnya ditutup
+        if (needsDbReopen) {
+            try {
+                db = await open({
+                    filename: SQLITE_DB_FILE,
+                    driver: sqlite3.Database
+                });
+                console.log('[Import] Koneksi database SQLite berhasil dibuka kembali.');
+            } catch (err) {
+                console.error('[Import] Gagal membuka kembali database SQLite:', err.message);
+            }
+        }
+
         // Reload config jika config.json di-restore
         if (results.restored.includes('config.json')) {
             try {
                 const newConfig = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8'));
+                
+                // Auto-correct path Chrome di config.json yang di-restore agar tidak crash jika dari Windows ke Linux
+                if (process.platform === 'linux') {
+                    if (newConfig.puppeteer_executable_path && (newConfig.puppeteer_executable_path.includes('\\') || newConfig.puppeteer_executable_path.toLowerCase().includes('program files') || newConfig.puppeteer_executable_path.toLowerCase().includes('chrome.exe'))) {
+                        newConfig.puppeteer_executable_path = '/usr/bin/google-chrome-stable';
+                        fs.writeFileSync(CONFIG_FILE, JSON.stringify(newConfig, null, 2), 'utf-8');
+                    }
+                }
+                
                 Object.assign(config, newConfig);
-                console.log('[Import] config.json berhasil dimuat ulang ke memori.');
+                console.log('[Import] config.json berhasil dimuat ulang ke memori (OS check aman).');
             } catch(e) {
                 console.warn('[Import] Gagal reload config.json:', e.message);
             }
