@@ -85,16 +85,14 @@ window.switchTab = function(tabId) {
     const tabSettings = document.getElementById('tab-settings');
     const tabGroups = document.getElementById('tab-groups');
     const tabShop = document.getElementById('tab-shop');
-    const tabOrders = document.getElementById('tab-orders');
-    const tabInvoices = document.getElementById('tab-invoices');
+    const tabTransactions = document.getElementById('tab-transactions');
     
     const btnMonitor = document.getElementById('btn-tab-monitor');
     const btnMemory = document.getElementById('btn-tab-memory');
     const btnSettings = document.getElementById('btn-tab-settings');
     const btnGroups = document.getElementById('btn-tab-groups');
     const btnShop = document.getElementById('btn-tab-shop');
-    const btnOrders = document.getElementById('btn-tab-orders');
-    const btnInvoices = document.getElementById('btn-tab-invoices');
+    const btnTransactions = document.getElementById('btn-tab-transactions');
     
     // Hide all
     if (tabMonitor) tabMonitor.classList.add('hidden');
@@ -102,16 +100,14 @@ window.switchTab = function(tabId) {
     if (tabSettings) tabSettings.classList.add('hidden');
     if (tabGroups) tabGroups.classList.add('hidden');
     if (tabShop) tabShop.classList.add('hidden');
-    if (tabOrders) tabOrders.classList.add('hidden');
-    if (tabInvoices) tabInvoices.classList.add('hidden');
+    if (tabTransactions) tabTransactions.classList.add('hidden');
     
     if (btnMonitor) btnMonitor.classList.remove('active');
     if (btnMemory) btnMemory.classList.remove('active');
     if (btnSettings) btnSettings.classList.remove('active');
     if (btnGroups) btnGroups.classList.remove('active');
     if (btnShop) btnShop.classList.remove('active');
-    if (btnOrders) btnOrders.classList.remove('active');
-    if (btnInvoices) btnInvoices.classList.remove('active');
+    if (btnTransactions) btnTransactions.classList.remove('active');
     
     if (tabId === 'monitor') {
         if (tabMonitor) tabMonitor.classList.remove('hidden');
@@ -131,13 +127,10 @@ window.switchTab = function(tabId) {
         if (btnShop) btnShop.classList.add('active');
         loadHostAdmins();
         loadCustomersList();
-    } else if (tabId === 'orders') {
-        if (tabOrders) tabOrders.classList.remove('hidden');
-        if (btnOrders) btnOrders.classList.add('active');
+    } else if (tabId === 'transactions') {
+        if (tabTransactions) tabTransactions.classList.remove('hidden');
+        if (btnTransactions) btnTransactions.add('active');
         loadOrders();
-    } else if (tabId === 'invoices') {
-        if (tabInvoices) tabInvoices.classList.remove('hidden');
-        if (btnInvoices) btnInvoices.classList.add('active');
         loadInvoices();
     }
 };// Real-time Socket.io Connection Events
@@ -2620,8 +2613,8 @@ window.loadOrders = async function() {
         document.getElementById('order-stat-pending').textContent = pending;
         document.getElementById('order-stat-completed').textContent = completed;
         
-        // Remove red dot badge if we are viewing the orders tab
-        const dot = document.getElementById('order-badge-dot');
+        // Remove red dot badge if we are viewing the transactions tab
+        const dot = document.getElementById('transaction-badge-dot');
         if (dot) dot.remove();
         
         renderOrdersTable();
@@ -2642,6 +2635,29 @@ window.filterOrders = function(status) {
     });
     renderOrdersTable();
 };
+
+// Helper format tanggal transaksi profesional (Contoh: Minggu, 12 Jul 2026 - 15:30)
+function formatTransactionDate(dateStr) {
+    if (!dateStr) return '-';
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        
+        const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        
+        const dayName = dayNames[d.getDay()];
+        const dateNum = String(d.getDate()).padStart(2, '0');
+        const monthName = monthNames[d.getMonth()];
+        const year = d.getFullYear();
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        
+        return `${dayName}, ${dateNum} ${monthName} ${year} - ${hours}:${minutes}`;
+    } catch(e) {
+        return dateStr;
+    }
+}
 
 window.renderOrdersTable = function() {
     const tbody = document.getElementById('orders-table-body');
@@ -2666,12 +2682,7 @@ window.renderOrdersTable = function() {
         const tr = document.createElement('tr');
         tr.style.borderBottom = '1px solid var(--border-color)';
         
-        const dateFormatted = new Date(order.created_at).toLocaleString('id-ID', {
-            hour: '2-digit',
-            minute: '2-digit',
-            day: '2-digit',
-            month: 'short'
-        });
+        const dateFormatted = formatTransactionDate(order.created_at);
         
         const statusBadge = order.status === 'PENDING' 
             ? `<span class="badge" style="background: rgba(255,214,10,0.15); color: #ffd60a; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">Menunggu</span>`
@@ -2758,18 +2769,18 @@ socket.on('order_created', (newOrder) => {
     }, 4000);
 
     const activeTab = document.querySelector('.ios-tab-btn.active');
-    if (activeTab && activeTab.id === 'btn-tab-orders') {
+    if (activeTab && activeTab.id === 'btn-tab-transactions') {
         loadOrders();
     } else {
-        const btnOrders = document.getElementById('btn-tab-orders');
-        if (btnOrders) {
-            btnOrders.style.position = 'relative';
-            let dot = document.getElementById('order-badge-dot');
+        const btnTransactions = document.getElementById('btn-tab-transactions');
+        if (btnTransactions) {
+            btnTransactions.style.position = 'relative';
+            let dot = document.getElementById('transaction-badge-dot');
             if (!dot) {
                 dot = document.createElement('span');
-                dot.id = 'order-badge-dot';
+                dot.id = 'transaction-badge-dot';
                 dot.style = 'position: absolute; top: 6px; right: 28px; width: 8px; height: 8px; background: #ff453a; border-radius: 50%;';
-                btnOrders.appendChild(dot);
+                btnTransactions.appendChild(dot);
             }
         }
     }
@@ -2793,7 +2804,7 @@ window.loadInvoices = async function() {
         document.getElementById('invoice-stat-proses').textContent = proses;
         document.getElementById('invoice-stat-selesai').textContent = selesai;
         
-        const dot = document.getElementById('invoice-badge-dot');
+        const dot = document.getElementById('transaction-badge-dot');
         if (dot) dot.remove();
         
         renderInvoicesTable();
@@ -2838,12 +2849,7 @@ window.renderInvoicesTable = function() {
         const tr = document.createElement('tr');
         tr.style.borderBottom = '1px solid var(--border-color)';
         
-        const dateFormatted = new Date(inv.created_at).toLocaleString('id-ID', {
-            hour: '2-digit',
-            minute: '2-digit',
-            day: '2-digit',
-            month: 'short'
-        });
+        const dateFormatted = formatTransactionDate(inv.created_at);
         
         const statusBadge = inv.status === 'PROSES' 
             ? `<span class="badge" style="background: rgba(255,214,10,0.15); color: #ffd60a; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">Diproses</span>`
@@ -2927,18 +2933,18 @@ socket.on('invoice_created', (newInv) => {
     }, 4000);
 
     const activeTab = document.querySelector('.ios-tab-btn.active');
-    if (activeTab && activeTab.id === 'btn-tab-invoices') {
+    if (activeTab && activeTab.id === 'btn-tab-transactions') {
         loadInvoices();
     } else {
-        const btnInvoices = document.getElementById('btn-tab-invoices');
-        if (btnInvoices) {
-            btnInvoices.style.position = 'relative';
-            let dot = document.getElementById('invoice-badge-dot');
+        const btnTransactions = document.getElementById('btn-tab-transactions');
+        if (btnTransactions) {
+            btnTransactions.style.position = 'relative';
+            let dot = document.getElementById('transaction-badge-dot');
             if (!dot) {
                 dot = document.createElement('span');
-                dot.id = 'invoice-badge-dot';
+                dot.id = 'transaction-badge-dot';
                 dot.style = 'position: absolute; top: 6px; right: 28px; width: 8px; height: 8px; background: #ff9f0a; border-radius: 50%;';
-                btnInvoices.appendChild(dot);
+                btnTransactions.appendChild(dot);
             }
         }
     }

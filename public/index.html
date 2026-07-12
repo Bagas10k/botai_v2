@@ -780,23 +780,28 @@
     <!-- ══════════════════════════════════════════
          TAB 5 — PEMESANAN (ORDERS)
     ══════════════════════════════════════════ -->
-    <div id="tab-orders" class="tab-content hidden">
-        <main class="dashboard-grid full-grid">
-            <section class="panel panel-full card">
+    <!-- ══════════════════════════════════════════
+         TAB 5 & 6 — TRANSAKSI (PEMESANAN & INVOICE)
+    ══════════════════════════════════════════ -->
+    <div id="tab-transactions" class="tab-content hidden">
+        <main class="dashboard-grid full-grid" style="display: flex; flex-direction: column; gap: 24px; padding: 20px;">
+            
+            <!-- PANEL 1: MANAJEMEN PEMESANAN -->
+            <section class="panel card" style="width: 100%;">
                 <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <div>
-                        <h2><i data-lucide="shopping-bag"></i> Manajemen Pemesanan</h2>
-                        <p class="card-subtitle">Daftar pesanan dari pelanggan secara real-time melalui WhatsApp</p>
+                        <h2><i data-lucide="shopping-bag" style="color: var(--primary-color);"></i> Kelola Pemesanan Masuk</h2>
+                        <p class="card-subtitle">Daftar pesanan baru dari grup/chat WhatsApp secara real-time</p>
                     </div>
-                    <div style="display: flex; gap: 8px;">
+                    <div>
                         <button class="btn btn-secondary" onclick="loadOrders()" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.85rem;">
-                            <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Refresh
+                            <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Refresh Pemesanan
                         </button>
                     </div>
                 </div>
 
-                <!-- Stats summary -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <!-- Stats summary Pemesanan -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
                     <div class="info-item" style="padding: 15px; border-radius: 10px; background: rgba(10, 132, 255, 0.08); border: 1px solid rgba(10, 132, 255, 0.15); display: flex; flex-direction: column;">
                         <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Total Pesanan</span>
                         <strong id="order-stat-total" style="font-size: 1.6rem; color: #0a84ff; margin-top: 4px;">0</strong>
@@ -811,7 +816,7 @@
                     </div>
                 </div>
 
-                <!-- Filter & Table -->
+                <!-- Filter & Table Pemesanan -->
                 <div style="margin-bottom: 12px; display: flex; justify-content: flex-end; gap: 8px;">
                     <button class="btn btn-secondary order-filter-btn active" onclick="filterOrders('ALL')" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 6px;">Semua</button>
                     <button class="btn btn-secondary order-filter-btn" onclick="filterOrders('PENDING')" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 6px;">Menunggu</button>
@@ -825,7 +830,7 @@
                                 <th style="padding: 12px 16px; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; width: 60px;">ID</th>
                                 <th style="padding: 12px 16px; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; width: 180px;">Pelanggan</th>
                                 <th style="padding: 12px 16px; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Detail Pesanan</th>
-                                <th style="padding: 12px 16px; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; width: 140px;">Waktu</th>
+                                <th style="padding: 12px 16px; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; width: 150px;">Tanggal Masuk</th>
                                 <th style="padding: 12px 16px; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; width: 120px;">Status</th>
                                 <th style="padding: 12px 16px; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; width: 160px; text-align: right;">Aksi</th>
                             </tr>
@@ -838,63 +843,54 @@
                     </table>
                 </div>
             </section>
-        </main>
-    </div>
 
-    <!-- ══════════════════════════════════════════
-         TAB 6 — INVOICE MANAGER
-    ══════════════════════════════════════════ -->
-    <div id="tab-invoices" class="tab-content hidden">
-        <main class="dashboard-grid full-width-grid">
-            <!-- SUMMARY STATS -->
-            <section class="panel stats-section" style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <i data-lucide="file-text" style="color: var(--primary-color);"></i>
-                        <span>Total Invoice</span>
+            <!-- PANEL 2: RIWAYAT PENCATATAN INVOICE -->
+            <section class="panel card" style="width: 100%;">
+                <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <h2><i data-lucide="receipt" style="color: var(--primary-color);"></i> Riwayat Pencatatan Invoice</h2>
+                        <p class="card-subtitle">Semua riwayat tagihan invoice yang dicetak melalui perintah WhatsApp</p>
                     </div>
-                    <div class="stat-card-value" id="invoice-stat-total">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <i data-lucide="clock" style="color: #ffd60a;"></i>
-                        <span>Sedang Diproses</span>
-                    </div>
-                    <div class="stat-card-value" id="invoice-stat-proses">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <i data-lucide="check-circle-2" style="color: #30d158;"></i>
-                        <span>Pembayaran Selesai</span>
-                    </div>
-                    <div class="stat-card-value" id="invoice-stat-selesai">0</div>
-                </div>
-            </section>
-
-            <!-- INVOICES LOG PANEL -->
-            <section class="panel main-panel card list-card" style="grid-column: 1 / -1;">
-                <div class="panel-header" style="flex-wrap: wrap; gap: 12px;">
-                    <div class="panel-title-area">
-                        <i data-lucide="receipt"></i>
-                        <h2>Riwayat Pencatatan Invoice</h2>
-                    </div>
-                    <div class="panel-actions" style="display: flex; gap: 8px;">
-                        <button class="btn btn-secondary invoice-filter-btn active" onclick="filterInvoices('ALL')" style="font-size: 0.8rem; padding: 6px 12px;">Semua</button>
-                        <button class="btn btn-secondary invoice-filter-btn" onclick="filterInvoices('PROSES')" style="font-size: 0.8rem; padding: 6px 12px; color: #ffd60a;">Diproses</button>
-                        <button class="btn btn-secondary invoice-filter-btn" onclick="filterInvoices('SELESAI')" style="font-size: 0.8rem; padding: 6px 12px; color: #30d158;">Selesai</button>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary" onclick="loadInvoices()" style="display: flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 0.85rem;">
+                            <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Refresh Invoice
+                        </button>
                     </div>
                 </div>
 
-                <div class="table-responsive" style="margin-top: 16px;">
-                    <table class="ios-table">
+                <!-- Stats summary Invoice -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div class="info-item" style="padding: 15px; border-radius: 10px; background: rgba(10, 132, 255, 0.08); border: 1px solid rgba(10, 132, 255, 0.15); display: flex; flex-direction: column;">
+                        <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Total Invoice</span>
+                        <strong id="invoice-stat-total" style="font-size: 1.6rem; color: #0a84ff; margin-top: 4px;">0</strong>
+                    </div>
+                    <div class="info-item" style="padding: 15px; border-radius: 10px; background: rgba(255, 214, 10, 0.08); border: 1px solid rgba(255, 214, 10, 0.15); display: flex; flex-direction: column;">
+                        <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Sedang Diproses</span>
+                        <strong id="invoice-stat-proses" style="font-size: 1.6rem; color: #ffd60a; margin-top: 4px;">0</strong>
+                    </div>
+                    <div class="info-item" style="padding: 15px; border-radius: 10px; background: rgba(48, 209, 88, 0.08); border: 1px solid rgba(48, 209, 88, 0.15); display: flex; flex-direction: column;">
+                        <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Pembayaran Selesai</span>
+                        <strong id="invoice-stat-selesai" style="font-size: 1.6rem; color: #30d158; margin-top: 4px;">0</strong>
+                    </div>
+                </div>
+
+                <!-- Filter & Table Invoice -->
+                <div style="margin-bottom: 12px; display: flex; justify-content: flex-end; gap: 8px;">
+                    <button class="btn btn-secondary invoice-filter-btn active" onclick="filterInvoices('ALL')" style="font-size: 0.8rem; padding: 6px 12px;">Semua</button>
+                    <button class="btn btn-secondary invoice-filter-btn" onclick="filterInvoices('PROSES')" style="font-size: 0.8rem; padding: 6px 12px; color: #ffd60a;">Diproses</button>
+                    <button class="btn btn-secondary invoice-filter-btn" onclick="filterInvoices('SELESAI')" style="font-size: 0.8rem; padding: 6px 12px; color: #30d158;">Selesai</button>
+                </div>
+
+                <div class="table-container" style="overflow-x: auto; background: rgba(255, 255, 255, 0.02); border-radius: 10px; border: 1px solid var(--border-color);">
+                    <table style="width: 100%; border-collapse: collapse; min-width: 600px; text-align: left;">
                         <thead>
-                            <tr>
-                                <th style="width: 15%;">No Invoice</th>
-                                <th style="width: 20%;">Pelanggan</th>
-                                <th style="width: 35%;">Detail Percakapan / Transaksi</th>
-                                <th style="width: 15%;">Waktu Cetak</th>
-                                <th style="width: 10%;">Status</th>
-                                <th style="width: 15%; text-align: right;">Aksi</th>
+                            <tr style="border-bottom: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.03);">
+                                <th style="padding: 12px 16px; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; width: 140px;">No Invoice</th>
+                                <th style="padding: 12px 16px; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; width: 180px;">Pelanggan</th>
+                                <th style="padding: 12px 16px; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Detail Percakapan / Transaksi</th>
+                                <th style="padding: 12px 16px; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; width: 150px;">Tanggal Cetak</th>
+                                <th style="padding: 12px 16px; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; width: 100px;">Status</th>
+                                <th style="padding: 12px 16px; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; width: 160px; text-align: right;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="invoices-table-body">
@@ -1275,13 +1271,9 @@
             <i data-lucide="store"></i>
             <span>Toko</span>
         </button>
-        <button id="btn-tab-orders" class="ios-tab-btn" onclick="switchTab('orders')">
-            <i data-lucide="shopping-bag"></i>
-            <span>Pemesanan</span>
-        </button>
-        <button id="btn-tab-invoices" class="ios-tab-btn" onclick="switchTab('invoices')">
-            <i data-lucide="file-text"></i>
-            <span>Invoice</span>
+        <button id="btn-tab-transactions" class="ios-tab-btn" onclick="switchTab('transactions')">
+            <i data-lucide="receipt"></i>
+            <span>Transaksi</span>
         </button>
         <button id="btn-tab-settings" class="ios-tab-btn" onclick="switchTab('settings')">
             <i data-lucide="settings-2"></i>

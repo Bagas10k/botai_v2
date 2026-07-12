@@ -3416,24 +3416,25 @@ async function handleIncomingMessage(msg) {
     const isGroup = msg.isGroupMsg || chatId.includes('@g.us');
     
     // Tentukan apakah pengirim adalah Bos
+    // Tentukan apakah pengirim adalah Bos
     const isSenderBoss = (() => {
-        if (!config.boss_number || config.boss_number.trim() === '') return true;
+        if (!config.boss_number || config.boss_number.trim() === '') return false;
         const cleanBoss = config.boss_number.replace(/\D/g, '');
         const sender = msg.author || msg.from;
         const cleanSender = sender.split('@')[0].replace(/\D/g, '');
         return cleanSender === cleanBoss;
     })();
 
-    // Tentukan apakah pengirim adalah Host Admin
+    // Tentukan apakah pengirim adalah Host Admin (Hanya nomor yang di-pin atau Bos yang sah)
     const isSenderHostAdmin = (() => {
-        if (isSenderBoss) return true;
         const senderId = msg.author || msg.from;
         const sender = senderId.split('@')[0].replace(/\D/g, '') + '@c.us';
         const senderLid = senderId.split('@')[0].replace(/\D/g, '') + '@lid';
-        return (shopData.host_admins || []).some(admin => {
+        const isPinnedAdmin = (shopData.host_admins || []).some(admin => {
             const cleanAdmin = admin.replace(/\D/g, '');
             return cleanAdmin === sender.split('@')[0] || cleanAdmin === senderLid.split('@')[0];
         });
+        return isPinnedAdmin || isSenderBoss;
     })();
 
     const senderId = msg.author || msg.from;
