@@ -430,8 +430,13 @@ app.post('/api/premium/send-reminder', async (req, res) => {
 // API: Files list and manage
 app.get('/api/files', (req, res) => {
     try {
-        const files = fs.readdirSync(KNOWLEDGE_DIR);
-        res.json(files);
+        const knowledgeFiles = fs.existsSync(KNOWLEDGE_DIR) ? fs.readdirSync(KNOWLEDGE_DIR) : [];
+        const mediaFiles = fs.existsSync(MEDIA_DIR) ? fs.readdirSync(MEDIA_DIR) : [];
+        
+        res.json({
+            knowledge: knowledgeFiles.map(name => ({ name })),
+            media: mediaFiles.map(name => ({ name }))
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -478,23 +483,41 @@ app.post('/api/ocr', mediaUpload.single('file'), async (req, res) => {
 });
 
 app.post('/api/files/delete', (req, res) => {
-    const { filename } = req.body;
-    const filePath = path.join(KNOWLEDGE_DIR, filename);
+    const { type, filename } = req.body;
+    const targetDir = type === 'media' ? MEDIA_DIR : KNOWLEDGE_DIR;
+    const filePath = path.join(targetDir, filename);
     if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-        res.json({ success: true });
+        try {
+            fs.unlinkSync(filePath);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: 'Gagal menghapus berkas: ' + err.message });
+        }
     } else {
         res.status(404).json({ error: 'File tidak ditemukan' });
     }
 });
 
 app.post('/api/files/rename', (req, res) => {
-    const { oldName, newName } = req.body;
-    const oldPath = path.join(KNOWLEDGE_DIR, oldName);
-    const newPath = path.join(KNOWLEDGE_DIR, newName);
+    const { type, oldFilename, newFilename, oldName, newName } = req.body;
+    const oldNameFinal = oldFilename || oldName;
+    const newNameFinal = newFilename || newName;
+    
+    if (!oldNameFinal || !newNameFinal) {
+        return res.status(400).json({ error: 'Nama file lama atau baru tidak valid' });
+    }
+
+    const targetDir = type === 'media' ? MEDIA_DIR : KNOWLEDGE_DIR;
+    const oldPath = path.join(targetDir, oldNameFinal);
+    const newPath = path.join(targetDir, newNameFinal);
+    
     if (fs.existsSync(oldPath)) {
-        fs.renameSync(oldPath, newPath);
-        res.json({ success: true });
+        try {
+            fs.renameSync(oldPath, newPath);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: 'Gagal mengubah nama berkas: ' + err.message });
+        }
     } else {
         res.status(404).json({ error: 'File tidak ditemukan' });
     }

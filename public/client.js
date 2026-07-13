@@ -282,12 +282,15 @@ async function loadFiles() {
 function renderFileList(container, files, type) {
     container.innerHTML = '';
     
-    if (files.length === 0) {
+    if (!files || files.length === 0) {
         container.innerHTML = `<div class="file-item-placeholder">Tidak ada berkas tersedia.</div>`;
         return;
     }
     
-    files.forEach(file => {
+    files.forEach(fileObj => {
+        const file = typeof fileObj === 'string' ? fileObj : (fileObj.name || '');
+        if (!file) return;
+
         const item = document.createElement('div');
         item.className = 'file-item';
         
