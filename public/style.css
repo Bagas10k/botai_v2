@@ -5,100 +5,108 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-/* ---- DESIGN TOKENS (Default: Light Clean) ---- */
+/* ---- DESIGN TOKENS (Default: Light uTask Blue) ---- */
 :root {
-    --bg:          #F6F8FA;
-    --surface:     #FFFFFF;
-    --surface2:    #F0F4F8;
-    --border:      #E4E9EF;
-    --text:        #111827;
-    --text-muted:  #6B7280;
-    --text-soft:   #9CA3AF;
+    --bg:          #f4f6fa;
+    --surface:     #ffffff;
+    --surface2:    #edf2f7;
+    --border:      rgba(59, 130, 246, 0.07);
+    --text:        #0f172a;
+    --text-muted:  #64748b;
+    --text-soft:   #94a3b8;
+    
+    --bg-primary:  var(--bg);
+    --bg-secondary: var(--surface2);
+    --text-primary: var(--text);
+    --text-secondary: var(--text-muted);
+    --border-color: var(--border);
+    --accent-color: var(--blue);
 
-    --blue:        #3B82F6;
-    --blue-soft:   #EFF6FF;
-    --blue-dark:   #2563EB;
-    --green:       #10B981;
-    --green-soft:  #ECFDF5;
-    --red:         #EF4444;
-    --red-soft:    #FEF2F2;
-    --orange:      #F59E0B;
-    --orange-soft: #FFFBEB;
-    --purple:      #8B5CF6;
-    --purple-soft: #F5F3FF;
+    --blue:        #3b82f6;
+    --blue-soft:   #e0f2fe;
+    --blue-dark:   #1d4ed8;
+    --blue-gradient: linear-gradient(135deg, #3b82f6 0%, #00c6ff 100%);
+    --green:       #10b981;
+    --green-soft:  #ecfdf5;
+    --red:         #ef4444;
+    --red-soft:    #fef2f2;
+    --orange:      #f59e0b;
+    --orange-soft: #fffbeb;
+    --purple:      #8b5cf6;
+    --purple-soft: #f5f3ff;
 
-    --radius-sm:   8px;
-    --radius:      14px;
-    --radius-lg:   20px;
-    --radius-xl:   28px;
+    --radius-sm:   10px;
+    --radius:      16px;
+    --radius-lg:   24px;
+    --radius-xl:   32px;
 
-    --shadow:      0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
-    --shadow-md:   0 4px 12px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.05);
+    --shadow:      0 8px 30px rgba(59, 130, 246, 0.02), 0 1px 2px rgba(0, 0, 0, 0.01);
+    --shadow-md:   0 16px 40px rgba(59, 130, 246, 0.05), 0 4px 12px rgba(0, 0, 0, 0.02);
 
     --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-    --header-bg:   rgba(255,255,255,.88);
-    --tabbar-bg:   rgba(255,255,255,.92);
+    --header-bg:   rgba(244, 246, 250, 0.85);
+    --tabbar-bg:   #ffffff;
 
-    --bubble-out:  #3B82F6;
-    --bubble-in:   #F0F4F8;
+    --bubble-out:  #3b82f6;
+    --bubble-in:   #edf2f7;
 
     --tab-bar-h:   68px;
 }
 
-/* ---- DARK THEME ---- */
+/* ---- DARK THEME (uTask Blue) ---- */
 .theme-dark {
-    --bg:          #0E1117;
-    --surface:     #161B26;
-    --surface2:    #1F2738;
-    --border:      #293040;
-    --text:        #F1F5F9;
-    --text-muted:  #8B9AB0;
-    --text-soft:   #4A5568;
+    --bg:          #08090d;
+    --surface:     #11131f;
+    --surface2:    #181b2e;
+    --border:      rgba(255, 255, 255, 0.04);
+    --text:        #f4f4f5;
+    --text-muted:  #a1a1aa;
+    --text-soft:   #52525b;
 
-    --blue-soft:   rgba(59,130,246,.12);
-    --green-soft:  rgba(16,185,129,.12);
-    --red-soft:    rgba(239,68,68,.12);
-    --orange-soft: rgba(245,158,11,.12);
-    --purple-soft: rgba(139,92,246,.12);
+    --blue-soft:   rgba(59, 130, 246, 0.12);
+    --green-soft:  rgba(16, 185, 129, 0.12);
+    --red-soft:    rgba(239, 68, 68, 0.12);
+    --orange-soft: rgba(245, 158, 11, 0.12);
+    --purple-soft: rgba(139, 92, 246, 0.12);
 
-    --shadow:      0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.2);
-    --shadow-md:   0 4px 12px rgba(0,0,0,.4), 0 8px 32px rgba(0,0,0,.25);
+    --shadow:      0 8px 30px rgba(0, 0, 0, 0.3);
+    --shadow-md:   0 16px 48px rgba(0, 0, 0, 0.4);
 
-    --header-bg:   rgba(22,27,38,.9);
-    --tabbar-bg:   rgba(22,27,38,.95);
+    --header-bg:   rgba(8, 9, 13, 0.85);
+    --tabbar-bg:   #0e1017;
 
-    --bubble-out:  #2563EB;
-    --bubble-in:   #1F2738;
+    --bubble-out:  #2563eb;
+    --bubble-in:   #181b2e;
 }
 
 /* ---- MINIMAL DARK THEME ---- */
 .theme-minimal-dark {
-    --bg:          #0a0b0d;
-    --surface:     #13151a;
-    --surface2:    #1f232b;
-    --border:      #262b35;
+    --bg:          #050608;
+    --surface:     #0d0f17;
+    --surface2:    #141724;
+    --border:      rgba(255, 255, 255, 0.03);
     --text:        #f1f3f5;
     --text-muted:  #959da5;
-    --text-soft:   #4A5568;
+    --text-soft:   #4a5568;
 
-    --blue:        #38bdf8;
-    --blue-soft:   rgba(56,189,248,.12);
+    --blue:        #00c6ff;
+    --blue-soft:   rgba(0, 198, 255, 0.12);
     --green:       #34d399;
-    --green-soft:  rgba(52,211,153,.12);
+    --green-soft:  rgba(52, 211, 153, 0.12);
     --red:         #f87171;
-    --red-soft:    rgba(248,113,113,.12);
+    --red-soft:    rgba(248, 113, 113, 0.12);
     --orange:      #fb923c;
-    --orange-soft: rgba(251,146,60,.12);
+    --orange-soft: rgba(251, 146, 60, 0.12);
 
-    --shadow:      0 2px 8px rgba(0,0,0,.5);
-    --shadow-md:   0 4px 20px rgba(0,0,0,.35);
+    --shadow:      0 4px 20px rgba(0, 0, 0, 0.5);
+    --shadow-md:   0 10px 40px rgba(0, 0, 0, 0.6);
 
-    --header-bg:   rgba(19,21,26,.9);
-    --tabbar-bg:   rgba(19,21,26,.95);
+    --header-bg:   rgba(13, 15, 23, 0.85);
+    --tabbar-bg:   #090a10;
 
-    --bubble-out:  #1f232b;
-    --bubble-in:   #18191c;
+    --bubble-out:  #141724;
+    --bubble-in:   #0d0f17;
 }
 
 /* ---- MINIMAL LIGHT THEME ---- */
@@ -120,8 +128,8 @@
     --red-soft:    #fee2e2;
     --orange-soft: #fef3c7;
 
-    --shadow:      0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.03);
-    --shadow-md:   0 4px 12px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.04);
+    --shadow:      0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.03);
+    --shadow-md:   0 4px 12px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.04);
 
     --header-bg:   rgba(255,255,255,.88);
     --tabbar-bg:   rgba(255,255,255,.94);
@@ -191,7 +199,7 @@ body {
 .logo-icon {
     width: 40px;
     height: 40px;
-    background: var(--blue);
+    background: var(--blue-gradient) !important;
     color: #fff;
     border-radius: var(--radius-sm);
     display: flex;
@@ -647,16 +655,17 @@ body {
    CARD
    ============================================================ */
 .card {
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    padding: 22px;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
-    transition: box-shadow .25s;
+    background: var(--surface) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 24px !important;
+    box-shadow: var(--shadow) !important;
+    border: 1px solid var(--border) !important;
+    transition: box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s !important;
 }
 
 .card:hover {
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-md) !important;
+    border-color: rgba(59, 130, 246, 0.12) !important;
 }
 
 .card h2 {
@@ -1376,7 +1385,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1100;
+    z-index: 999999 !important;
     animation: fadeIn .18s ease;
     padding: 20px;
 }
@@ -1863,3 +1872,809 @@ textarea.form-control, input.form-control {
         max-height: 220px !important;
     }
 }
+
+/* ---- Premium Tab Layout Responsiveness ---- */
+@media (max-width: 1024px) {
+    #tab-premium .dashboard-grid.settings-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ---- Premium Floating Modals ---- */
+.premium-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.2s ease-out;
+}
+.premium-modal-content {
+    background: #1a1a24;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    width: 92%;
+    max-width: 500px;
+    padding: 24px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    animation: scaleIn 0.2s ease-out;
+}
+.premium-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 12px;
+}
+.premium-modal-header h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.premium-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.15s;
+}
+.premium-modal-close:hover {
+    color: #ff453a;
+}
+.hidden-modal {
+    display: none !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes scaleIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* ============================================================
+   PREMIUM UI OVERRIDES & MODERN AESTHETICS (Apple iOS-Like)
+   ============================================================ */
+
+/* 1. Custom Smooth Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+.theme-light ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+}
+.theme-light ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* 2. Frosted Glass Cards & Panels */
+.card, .panel {
+    background: var(--surface);
+    border-radius: 16px !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+
+.card:hover, .panel:hover {
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.06) !important;
+    transform: translateY(-2px);
+    border-color: rgba(10, 132, 255, 0.25) !important;
+}
+
+/* 3. Sleek Inputs & Select Elements */
+.form-control, input, select, textarea {
+    border-radius: 10px !important;
+    border: 1px solid var(--border) !important;
+    background: var(--surface2) !important;
+    color: var(--text) !important;
+    padding: 8px 12px !important;
+    font-family: var(--font) !important;
+    font-size: 0.82rem !important;
+    transition: all 0.2s ease-in-out !important;
+    outline: none !important;
+}
+
+.form-control:focus, input:focus, select:focus, textarea:focus {
+    border-color: var(--blue) !important;
+    box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.15) !important;
+    background: var(--surface) !important;
+}
+
+/* 4. Elegant Buttons with Subtle Gradients */
+.btn {
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-size: 0.82rem !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid transparent;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0a84ff 0%, #0066cc 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #3598ff 0%, #0a84ff 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px rgba(10, 132, 255, 0.25) !important;
+}
+
+.btn-secondary {
+    background: var(--surface2) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+}
+
+.btn-secondary:hover {
+    background: var(--surface) !important;
+    border-color: var(--text-muted) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* 5. Smooth Tab Transition Bar & Glassmorphism Header */
+.app-header {
+    background: var(--header-bg) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+
+.ios-tab-bar {
+    background: var(--tabbar-bg) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+    border-top: 1px solid var(--border) !important;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* 6. Glowing Table Headers and Rows */
+table th {
+    font-weight: 700 !important;
+    color: var(--text-muted) !important;
+    font-size: 0.76rem !important;
+}
+
+table tr {
+    transition: background-color 0.2s ease !important;
+}
+
+table tr:hover {
+    background: rgba(255, 255, 255, 0.015) !important;
+}
+.theme-light table tr:hover {
+    background: rgba(0, 0, 0, 0.01) !important;
+}
+
+/* 7. Premium Floating Modals Overlay (Right-side sheet style) */
+.premium-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(0, 0, 0, 0.1) !important; /* Very soft dimmed backdrop */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    display: flex;
+    align-items: flex-start !important; /* Align to top of viewport */
+    justify-content: flex-end !important; /* Align to the right edge */
+    padding: 88px 24px 24px 24px !important; /* Leave header spacing on desktop */
+    z-index: 999999 !important;
+}
+
+.premium-modal-content {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02) !important;
+    width: 380px !important; /* Compact clean drawer width */
+    max-width: 100% !important;
+    padding: 20px !important;
+    max-height: calc(100vh - 110px) !important;
+    overflow-y: auto !important;
+    animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.premium-modal-header {
+    border-bottom: 1px solid var(--border) !important;
+    background: transparent !important;
+    padding-bottom: 14px !important;
+}
+
+/* 8. Table Styling Fixes (Align columns, soft theme colors) */
+table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+}
+table th {
+    padding: 14px 16px !important;
+    font-weight: 700 !important;
+    font-size: 0.78rem !important;
+    color: var(--text-muted) !important;
+    background: rgba(120, 120, 120, 0.03) !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+table td {
+    padding: 14px 16px !important;
+    font-size: 0.84rem !important;
+    color: var(--text) !important;
+    border-bottom: 1px solid var(--border) !important;
+    vertical-align: middle !important;
+}
+.table-container {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02) !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+}
+
+/* 9. Segmented Control for Filter Buttons */
+.order-filter-btn, .invoice-filter-btn {
+    background: var(--surface2) !important;
+    color: var(--text-muted) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    padding: 6px 14px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+.order-filter-btn.active, .invoice-filter-btn.active {
+    background: var(--blue) !important;
+    color: #ffffff !important;
+    border-color: var(--blue) !important;
+    box-shadow: 0 4px 12px rgba(10, 132, 255, 0.25) !important;
+}
+
+/* 10. Form Grid & Input Alignment inside Modals */
+.premium-modal-content form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.premium-modal-content .form-group {
+    margin-bottom: 0 !important;
+}
+.premium-modal-content label {
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    color: var(--text-muted) !important;
+    margin-bottom: 5px !important;
+    display: block;
+}
+
+/* Checkbox vertical alignment inside form */
+.premium-modal-content input[type="checkbox"] {
+    width: 18px !important;
+    height: 18px !important;
+    cursor: pointer;
+    accent-color: var(--blue);
+}
+.premium-modal-content input[type="checkbox"] + label {
+    display: inline-block !important;
+    margin-bottom: 0 !important;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+/* 11. Export Card Background Overrides (fixing dark theme clash) */
+.panel-right [style*="background: var(--bg-secondary"],
+.panel-right [style*="background: var(--bg-secondary, #f5f5f5)"] {
+    background: var(--surface2) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+}
+.panel-right [style*="background: var(--bg-secondary"] p,
+.panel-right [style*="background: var(--bg-secondary, #f5f5f5)"] p,
+.panel-right [style*="background: var(--bg-secondary"] div,
+.panel-right [style*="background: var(--bg-secondary, #f5f5f5)"] div,
+.panel-right [style*="background: var(--bg-secondary"] strong,
+.panel-right [style*="background: var(--bg-secondary, #f5f5f5)"] strong {
+    color: var(--text) !important;
+}
+.panel-right [style*="background: var(--bg-secondary"] p,
+.panel-right [style*="background: var(--bg-secondary, #f5f5f5)"] p {
+    color: var(--text-muted) !important;
+}
+
+/* ============================================================
+   STARTUP-GRADE DASHBOARD DESKTOP SIDEBAR GRID LAYOUT
+   ============================================================ */
+
+/* Visibility helper classes */
+.mobile-only {
+    display: none !important;
+}
+.desktop-only {
+    display: block !important;
+}
+
+@media (max-width: 1023px) {
+    .mobile-only {
+        display: flex !important;
+    }
+    .desktop-only {
+        display: none !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    body {
+        padding-bottom: 0 !important;
+        overflow: hidden;
+    }
+
+    .app-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100vh;
+        display: grid;
+        grid-template-columns: 80px 1fr;
+        grid-template-rows: 72px 1fr;
+        grid-template-areas:
+            "sidebar header"
+            "sidebar main";
+    }
+
+    /* Top Header repositioned inside Grid layout */
+    .app-header {
+        grid-area: header;
+        position: sticky !important;
+        top: 0;
+        height: 72px;
+        padding: 0 40px !important;
+        background: var(--bg) !important;
+        border-bottom: none !important;
+        box-shadow: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important; /* logo hidden, controls right aligned */
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        z-index: 900 !important;
+    }
+
+    /* Left Sidebar Navigation repositioned inside Grid layout */
+    .ios-tab-bar {
+        grid-area: sidebar;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 80px;
+        height: 100vh;
+        background: var(--surface) !important;
+        border-right: 1px solid var(--border) !important;
+        border-top: none !important;
+        box-shadow: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
+        padding: 24px 8px !important;
+        gap: 8px !important;
+        z-index: 1000 !important;
+        overflow-y: auto;
+    }
+
+    /* Sidebar Logo branding style */
+    .sidebar-logo {
+        display: flex !important;
+        align-items: center;
+        justify-content: center !important;
+        padding: 0 0 20px 0 !important;
+        border-bottom: none !important;
+        margin-bottom: 12px;
+        width: 100%;
+    }
+
+    .sidebar-logo .logo-icon {
+        width: 36px;
+        height: 36px;
+        background: var(--blue-gradient) !important;
+        color: #fff;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+
+    .sidebar-logo .logo-icon i {
+        width: 18px;
+        height: 18px;
+    }
+
+    .sidebar-logo .logo-text {
+        display: none !important;
+    }
+
+    /* Sidebar tab buttons style */
+    .ios-tab-btn {
+        flex: none !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0 !important;
+        width: 48px !important;
+        height: 48px !important;
+        padding: 0 !important;
+        border-radius: 12px !important;
+        color: var(--text-muted) !important;
+        transition: var(--transition-smooth) !important;
+        background: transparent !important;
+        border: none !important;
+        cursor: pointer !important;
+    }
+
+    .ios-tab-btn i {
+        width: 18px !important;
+        height: 18px !important;
+        stroke-width: 2px !important;
+    }
+
+    .ios-tab-btn span {
+        display: none !important;
+    }
+
+    .ios-tab-btn:hover {
+        background: var(--surface2) !important;
+        color: var(--text) !important;
+    }
+
+    .ios-tab-btn.active {
+        background: var(--blue-gradient) !important;
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2) !important;
+    }
+
+    /* Tab contents area inside Grid layout */
+    .tab-content {
+        grid-area: main;
+        height: calc(100vh - 72px);
+        overflow-y: auto;
+        padding: 32px 40px !important;
+        background: var(--bg);
+    }
+
+    .tab-content::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    /* Desktop grid alignment adjustments */
+    .dashboard-grid {
+        grid-template-columns: 360px 1fr !important;
+        gap: 24px !important;
+        align-items: start;
+    }
+
+    .groups-grid {
+        grid-template-columns: 300px 1fr !important;
+        gap: 24px !important;
+        height: 100% !important;
+    }
+
+    .group-editor-inner {
+        grid-template-columns: 340px 1fr !important;
+        gap: 24px !important;
+    }
+
+    .shop-grid {
+        grid-template-columns: 360px 1fr !important;
+        gap: 24px !important;
+        height: 100% !important;
+        padding: 0 !important;
+    }
+}
+
+/* ============================================================
+   STARTUP-GRADE DETAIL POLISHING
+   ============================================================ */
+
+/* Sleek modern tables */
+table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+}
+
+table th {
+    background: var(--surface2) !important;
+    color: var(--text-muted) !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    padding: 12px 16px !important;
+    border-bottom: 1px solid var(--border) !important;
+}
+
+table td {
+    padding: 14px 16px !important;
+    font-size: 0.85rem !important;
+    color: var(--text) !important;
+    border-bottom: 1px solid var(--border) !important;
+    vertical-align: middle !important;
+}
+
+table tr {
+    transition: background-color 0.15s ease !important;
+}
+
+table tr:hover {
+    background: rgba(59, 130, 246, 0.02) !important;
+}
+
+/* Premium card aesthetics */
+.card, .panel {
+    background: var(--surface);
+    border: 1px solid var(--border) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,.02), 0 4px 12px rgba(0,0,0,.02) !important;
+    border-radius: 12px !important;
+}
+
+.card:hover, .panel:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(59, 130, 246, 0.2) !important;
+    transform: none !important; /* Disable raw transform lift to maintain startup stability */
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(120, 120, 120, 0.15);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(120, 120, 120, 0.3);
+}
+
+/* Input alignments & focus glows */
+.form-control, input, select, textarea {
+    border-radius: var(--radius-sm) !important;
+    border: 1px solid var(--border) !important;
+    background: var(--surface2) !important;
+    font-size: 0.85rem !important;
+    padding: 10px 14px !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.01) !important;
+    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s !important;
+}
+
+.form-control:focus, input:focus, select:focus, textarea:focus {
+    border-color: var(--blue) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+    background: var(--surface) !important;
+}
+
+/* Stat cards layout inside transactions and premium tabs */
+.premium-stats-grid .card {
+    padding: 20px !important;
+    border-radius: 12px !important;
+    transition: var(--transition-smooth) !important;
+}
+
+.premium-stats-grid .card:hover {
+    border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Done/Pending badges */
+.badge-status {
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-status.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--orange);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.badge-status.completed {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--green);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+/* Slide in animation from right */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Mobile adjustments to float at the bottom (sheet style) */
+@media (max-width: 768px) {
+    .premium-modal {
+        align-items: flex-end !important; /* Align bottom for mobile thumb reachability */
+        justify-content: center !important;
+        padding: 16px !important;
+    }
+    .premium-modal-content {
+        width: 100% !important;
+        max-height: 75vh !important;
+        animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+}
+
+/* Styling for Premium Manager Tab Tables to make them smaller and more readable */
+#tab-premium table.table {
+    font-size: 0.73rem !important;
+}
+
+#tab-premium table.table th {
+    padding: 8px 6px !important;
+    font-size: 0.7rem !important;
+}
+
+#tab-premium table.table td {
+    padding: 8px 6px !important;
+    font-size: 0.72rem !important;
+    line-height: 1.35 !important;
+}
+
+#tab-premium table.table strong {
+    font-size: 0.74rem !important;
+}
+
+/* Ensure long credential emails wrap correctly instead of pushing the table width */
+#tab-premium table.table td div,
+#tab-premium table.table td span {
+    word-break: break-all !important;
+    white-space: normal !important;
+}
+
+/* Styling for Transactions Tab Tables to be compact and scrollable */
+#tab-transactions table {
+    font-size: 0.72rem !important;
+}
+
+#tab-transactions th {
+    padding: 8px 10px !important;
+    font-size: 0.7rem !important;
+}
+
+#tab-transactions td {
+    padding: 8px 10px !important;
+    font-size: 0.72rem !important;
+    line-height: 1.35 !important;
+}
+
+#tab-transactions td strong {
+    font-size: 0.74rem !important;
+}
+
+#tab-transactions td div,
+#tab-transactions td span {
+    word-break: break-all !important;
+    white-space: normal !important;
+}
+
+@media (min-width: 1024px) {
+    /* Shrink the main layout when a premium drawer modal is open to prevent table columns from being covered */
+    .app-container:has(.premium-modal:not(.hidden-modal)) .full-width-layout,
+    .app-container:has(.premium-modal:not(.hidden-modal)) .premium-stats-grid {
+        margin-right: 420px !important;
+        transition: margin-right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+}
+
+/* 12. Local Notepad & Word Mini Stylings */
+#local-notepad-editor {
+    min-height: 100%;
+    outline: none;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--text) !important;
+}
+
+#local-notepad-editor h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-top: 10px;
+    margin-bottom: 12px;
+    color: var(--text) !important;
+}
+
+#local-notepad-editor h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-top: 8px;
+    margin-bottom: 10px;
+    color: var(--text) !important;
+}
+
+#local-notepad-editor p {
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+    line-height: 1.6;
+    color: var(--text) !important;
+}
+
+#local-notepad-editor ul, 
+#local-notepad-editor ol {
+    margin-left: 20px;
+    margin-bottom: 12px;
+    padding-left: 10px;
+}
+
+#local-notepad-editor li {
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+    color: var(--text) !important;
+}
+
+.editor-toolbar button.toolbar-btn {
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+}
+
+.editor-toolbar button.toolbar-btn:hover {
+    background: var(--bg-secondary);
+    border-color: var(--blue);
+}
+
+/* Light / Dark Mode adaptive contenteditable area background */
+[data-theme="dark"] #local-notepad-editor,
+[data-theme="ios-dark"] #local-notepad-editor {
+    color: #e2e8f0 !important;
+}
+
+
+

@@ -20,5 +20,8 @@
   "openrouter_model": "meta-llama/llama-3.3-70b-instruct",
   "boss_number": "628123456789",
   "report_time": "08:00",
-  "puppeteer_executable_path": ""
+  "puppeteer_executable_path": "",
+  "admin_username": "admin",
+  "admin_password": "YOUR_STRONG_PASSWORD"
 }
+

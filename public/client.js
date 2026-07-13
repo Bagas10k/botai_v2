@@ -78,67 +78,33 @@ document.addEventListener('DOMContentLoaded', () => {
 // Change Theme Handler (dihandle di index.html — fungsi ini sebagai fallback/compat)
 // Fungsi utama ada di inline script index.html agar tidak ada duplikasi
 
-// Switch Tab Navigation
 window.switchTab = function(tabId) {
-    const tabMonitor = document.getElementById('tab-monitor');
-    const tabMemory = document.getElementById('tab-memory');
-    const tabSettings = document.getElementById('tab-settings');
-    const tabGroups = document.getElementById('tab-groups');
-    const tabShop = document.getElementById('tab-shop');
-    const tabTransactions = document.getElementById('tab-transactions');
-    const tabFeatures = document.getElementById('tab-features');
+    // Hide all tab content
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.ios-tab-btn').forEach(el => el.classList.remove('active'));
     
-    const btnMonitor = document.getElementById('btn-tab-monitor');
-    const btnMemory = document.getElementById('btn-tab-memory');
-    const btnSettings = document.getElementById('btn-tab-settings');
-    const btnGroups = document.getElementById('btn-tab-groups');
-    const btnShop = document.getElementById('btn-tab-shop');
-    const btnTransactions = document.getElementById('btn-tab-transactions');
-    const btnFeatures = document.getElementById('btn-tab-features');
+    // Show selected tab content
+    const selectedTab = document.getElementById(`tab-${tabId}`);
+    if (selectedTab) selectedTab.classList.remove('hidden');
     
-    // Hide all
-    if (tabMonitor) tabMonitor.classList.add('hidden');
-    if (tabMemory) tabMemory.classList.add('hidden');
-    if (tabSettings) tabSettings.classList.add('hidden');
-    if (tabGroups) tabGroups.classList.add('hidden');
-    if (tabShop) tabShop.classList.add('hidden');
-    if (tabTransactions) tabTransactions.classList.add('hidden');
-    if (tabFeatures) tabFeatures.classList.add('hidden');
+    // Make corresponding tab button active
+    const selectedBtn = document.getElementById(`btn-tab-${tabId}`);
+    if (selectedBtn) selectedBtn.classList.add('active');
     
-    if (btnMonitor) btnMonitor.classList.remove('active');
-    if (btnMemory) btnMemory.classList.remove('active');
-    if (btnSettings) btnSettings.classList.remove('active');
-    if (btnGroups) btnGroups.classList.remove('active');
-    if (btnShop) btnShop.classList.remove('active');
-    if (btnTransactions) btnTransactions.classList.remove('active');
-    if (btnFeatures) btnFeatures.classList.remove('active');
-    
-    if (tabId === 'monitor') {
-        if (tabMonitor) tabMonitor.classList.remove('hidden');
-        if (btnMonitor) btnMonitor.classList.add('active');
-    } else if (tabId === 'memory') {
-        if (tabMemory) tabMemory.classList.remove('hidden');
-        if (btnMemory) btnMemory.classList.add('active');
-    } else if (tabId === 'settings') {
-        if (tabSettings) tabSettings.classList.remove('hidden');
-        if (btnSettings) btnSettings.classList.add('active');
-    } else if (tabId === 'groups') {
-        if (tabGroups) tabGroups.classList.remove('hidden');
-        if (btnGroups) btnGroups.classList.add('active');
+    // Specific triggers
+    if (tabId === 'groups') {
         loadGroupsList();
     } else if (tabId === 'shop') {
-        if (tabShop) tabShop.classList.remove('hidden');
-        if (btnShop) btnShop.classList.add('active');
         loadHostAdmins();
         loadCustomersList();
     } else if (tabId === 'transactions') {
-        if (tabTransactions) tabTransactions.classList.remove('hidden');
-        if (btnTransactions) btnTransactions.classList.add('active');
         loadOrders();
         loadInvoices();
-    } else if (tabId === 'features') {
-        if (tabFeatures) tabFeatures.classList.remove('hidden');
-        if (btnFeatures) btnFeatures.classList.add('active');
+    } else if (tabId === 'premium') {
+        loadPremiumData();
+    } else if (tabId === 'notes') {
+        loadLocalNotes();
     }
 };// Real-time Socket.io Connection Events
 socket.on('connect', () => {
@@ -2565,6 +2531,7 @@ window.uploadNodeMediaFile = async function(input) {
 // === ORDERS MANAGEMENT (REAL-TIME ORDER TAB) ===
 let allOrders = [];
 let currentOrderFilter = 'ALL';
+let currentOrderSort = 'newest';
 
 // Inject keyframe animations for toast notification
 const animStyle = document.createElement('style');
@@ -2643,6 +2610,11 @@ window.filterOrders = function(status) {
     renderOrdersTable();
 };
 
+window.sortOrders = function(criteria) {
+    currentOrderSort = criteria;
+    renderOrdersTable();
+};
+
 // Helper format tanggal transaksi profesional (Contoh: Minggu, 12 Jul 2026 - 15:30)
 function formatTransactionDate(dateStr) {
     if (!dateStr) return '-';
@@ -2671,10 +2643,29 @@ window.renderOrdersTable = function() {
     if (!tbody) return;
     tbody.innerHTML = '';
     
-    const filtered = allOrders.filter(o => {
+    let filtered = allOrders.filter(o => {
         if (currentOrderFilter === 'ALL') return true;
         return o.status === currentOrderFilter;
     });
+    
+    // Sort logic
+    if (currentOrderSort === 'newest') {
+        filtered.sort((a, b) => b.id - a.id);
+    } else if (currentOrderSort === 'oldest') {
+        filtered.sort((a, b) => a.id - b.id);
+    } else if (currentOrderSort === 'name-asc') {
+        filtered.sort((a, b) => {
+            const nameA = (a.customer_name || '').toLowerCase();
+            const nameB = (b.customer_name || '').toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+    } else if (currentOrderSort === 'name-desc') {
+        filtered.sort((a, b) => {
+            const nameA = (a.customer_name || '').toLowerCase();
+            const nameB = (b.customer_name || '').toLowerCase();
+            return nameB.localeCompare(nameA);
+        });
+    }
     
     if (filtered.length === 0) {
         tbody.innerHTML = `
@@ -3107,4 +3098,79 @@ window.doImport = function() {
     };
 
     xhr.send(formData);
+};
+
+// === AUTOMATION SCHEDULER ACTIONS ===
+window.triggerSchedulerAction = async function(action, btn) {
+    const oldHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader" style="width:12px; height:12px; border-width:2px; display:inline-block; vertical-align:middle; margin-right:6px;"></span> Memproses...';
+    
+    try {
+        const res = await fetch(`/api/scheduler/${action}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Server error');
+        
+        alert('✅ ' + data.message);
+    } catch(err) {
+        alert('❌ Gagal memicu otomatisasi: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = oldHtml;
+    }
+};
+
+// === LOCAL NOTEPAD (WORD MINI) ===
+window.execEditorCommand = function(cmd, value = null) {
+    document.execCommand(cmd, false, value);
+    const editor = document.getElementById('local-notepad-editor');
+    if (editor) editor.focus();
+};
+
+window.loadLocalNotes = async function() {
+    const editor = document.getElementById('local-notepad-editor');
+    if (!editor) return;
+    
+    try {
+        const res = await fetch('/api/notepad');
+        if (!res.ok) throw new Error('Gagal mengambil data catatan.');
+        const data = await res.json();
+        editor.innerHTML = data.content || '<p>Mulai ketik catatan operasional atau memo toko Anda di sini...</p>';
+    } catch(err) {
+        console.error('Error loadLocalNotes:', err);
+    }
+};
+
+window.saveLocalNotes = async function() {
+    const editor = document.getElementById('local-notepad-editor');
+    const btn = document.getElementById('btn-save-notes');
+    if (!editor || !btn) return;
+    
+    const content = editor.innerHTML.trim();
+    const oldHtml = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader" style="width:12px; height:12px; border-width:2px; display:inline-block; vertical-align:middle; margin-right:6px;"></span> Menyimpan...';
+    
+    try {
+        const res = await fetch('/api/notepad', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Server error');
+        
+        alert('✅ Catatan berhasil disimpan ke database!');
+    } catch(err) {
+        alert('❌ Gagal menyimpan catatan: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = oldHtml;
+    }
 };
