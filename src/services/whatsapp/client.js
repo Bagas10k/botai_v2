@@ -310,10 +310,57 @@ function getQrCode() {
     return currentQrCode;
 }
 
+async function restartClient(clearSession = false) {
+    console.log(`[WA] Restarting client... (clearSession: ${clearSession})`);
+    
+    if (initWatchdogTimer) {
+        clearTimeout(initWatchdogTimer);
+        initWatchdogTimer = null;
+    }
+    
+    if (client) {
+        try {
+            await Promise.race([
+                client.destroy(),
+                new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000))
+            ]);
+        } catch (e) {
+            console.warn('[WA] Warning saat destroy client:', e.message);
+        }
+        client = null;
+    }
+    
+    await cleanupHeadlessChrome();
+    
+    if (clearSession) {
+        const sessionPath = path.join(__dirname, '../../../session');
+        if (fs.existsSync(sessionPath)) {
+            try {
+                fs.rmSync(sessionPath, { recursive: true, force: true });
+                console.log('[WA] Folder sesi ./session berhasil dihapus.');
+            } catch (err) {
+                console.error('[WA] Gagal menghapus folder sesi:', err.message);
+            }
+        }
+    }
+    
+    isRestarting = false;
+    currentStatus = 'DISCONNECTED';
+    currentQrCode = '';
+    
+    if (ioInstance) {
+        ioInstance.emit('whatsapp_status', { status: currentStatus });
+        ioInstance.emit('qr', '');
+    }
+    
+    createNewClient(ioInstance);
+}
+
 module.exports = {
     createNewClient,
     getClient,
     getStatus,
     getQrCode,
-    cleanupHeadlessChrome
+    cleanupHeadlessChrome,
+    restartClient
 };

@@ -31,7 +31,8 @@ const {
     getClient, 
     getStatus, 
     getQrCode, 
-    cleanupHeadlessChrome 
+    cleanupHeadlessChrome,
+    restartClient
 } = require('./src/services/whatsapp/client');
 const { performOCR, isReceiptText, extractReceiptDetails } = require('./src/services/ocr/ocrService');
 const { setSocketIo } = require('./src/services/ai/aiService');
@@ -1057,23 +1058,6 @@ app.post('/api/import', uploadZip.single('backup'), async (req, res) => {
         await Promise.all(writePromises);
         try { fs.unlinkSync(zipPath); } catch(_) {}
 
-        if (needsDbReopen) {
-            try {
-                // Tunggu sebentar agar OS selesai menulis file
-                await new Promise(r => setTimeout(r, 500));
-                await initDatabase();
-                console.log('[Import] Koneksi database SQLite berhasil dibuka kembali.');
-                
-                // Verifikasi — pastikan group_configs terbaca
-                const freshDb = getDb();
-                const gcRows = await freshDb.all('SELECT group_id FROM group_configs');
-                const kvRows = await freshDb.all('SELECT key FROM key_value_store');
-                console.log(`[Import] Verifikasi DB: ${gcRows.length} group config, ${kvRows.length} kv entries.`);
-            } catch (err) {
-                console.error('[Import] Gagal membuka kembali database SQLite:', err.message);
-            }
-        }
-
         if (results.restored.includes('config.json')) {
             try {
                 const configPath = path.join(__dirname, 'config.json');
@@ -1105,23 +1089,33 @@ app.post('/api/import', uploadZip.single('backup'), async (req, res) => {
         try { fs.unlinkSync(zipPath); } catch(_) {}
         console.error('[Import] Error saat import:', err.message);
         res.status(500).json({ success: false, message: `Gagal import: ${err.message}` });
+    } finally {
+        if (needsDbReopen) {
+            try {
+                // Tunggu sebentar agar OS selesai menulis file
+                await new Promise(r => setTimeout(r, 500));
+                await initDatabase();
+                console.log('[Import] Koneksi database SQLite berhasil dibuka kembali.');
+                
+                // Verifikasi — pastikan group_configs terbaca
+                const freshDb = getDb();
+                if (freshDb) {
+                    const gcRows = await freshDb.all('SELECT group_id FROM group_configs');
+                    const kvRows = await freshDb.all('SELECT key FROM key_value_store');
+                    console.log(`[Import] Verifikasi DB: ${gcRows.length} group config, ${kvRows.length} kv entries.`);
+                }
+            } catch (err) {
+                console.error('[Import] Gagal membuka kembali database SQLite di finally:', err.message);
+            }
+        }
     }
 });
 
 // API: Restart WhatsApp Client
 app.post('/api/whatsapp/restart', async (req, res) => {
     try {
-        const client = getClient();
-        if (client) {
-            try { 
-                await Promise.race([
-                    client.destroy(),
-                    new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000))
-                ]); 
-            } catch(_) {}
-        }
-        await cleanupHeadlessChrome();
-        createNewClient(io);
+        const { clearSession } = req.body;
+        await restartClient(clearSession === true || clearSession === 'true' || clearSession === '1');
         res.json({ success: true, message: 'Menyalakan ulang WhatsApp client...' });
     } catch (err) {
         console.error('Gagal restart WA:', err.message);

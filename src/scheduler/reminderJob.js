@@ -1,4 +1,5 @@
-const { getDb, deactivateReminder, getReminders, getGroupConfigs } = require('../db/models');
+const { deactivateReminder, getReminders, getGroupConfigs } = require('../db/models');
+const { getDb } = require('../db/sqlite');
 const { config } = require('../config/config');
 const { fetchSheetsSummary } = require('../services/sheets/sheetsService');
 const { MessageMedia } = require('whatsapp-web.js');
