@@ -3425,19 +3425,31 @@ async function handleIncomingMessage(msg) {
         return cleanSender === cleanBoss;
     })();
 
-    // Tentukan apakah pengirim adalah Host Admin (Hanya nomor yang di-pin atau Bos yang sah)
-    const isSenderHostAdmin = (() => {
-        const senderId = msg.author || msg.from;
-        const sender = senderId.split('@')[0].replace(/\D/g, '') + '@c.us';
-        const senderLid = senderId.split('@')[0].replace(/\D/g, '') + '@lid';
-        const isPinnedAdmin = (shopData.host_admins || []).some(admin => {
-            const cleanAdmin = admin.replace(/\D/g, '');
-            return cleanAdmin === sender.split('@')[0] || cleanAdmin === senderLid.split('@')[0];
-        });
-        return isPinnedAdmin || isSenderBoss;
-    })();
-
+    // Tentukan apakah pengirim adalah Host Admin (Hanya nomor yang di-pin, Bos, atau Admin Grup di grup tersebut)
+    let isSenderHostAdmin = false;
     const senderId = msg.author || msg.from;
+    const sender = senderId.split('@')[0].replace(/\D/g, '') + '@c.us';
+    const senderLid = senderId.split('@')[0].replace(/\D/g, '') + '@lid';
+    const isPinnedAdmin = (shopData.host_admins || []).some(admin => {
+        const cleanAdmin = admin.replace(/\D/g, '');
+        return cleanAdmin === sender.split('@')[0] || cleanAdmin === senderLid.split('@')[0];
+    });
+    isSenderHostAdmin = isPinnedAdmin || isSenderBoss;
+
+    // Jika di grup dan belum teridentifikasi sebagai Host Admin, periksa apakah pengirim adalah admin grup
+    if (!isSenderHostAdmin && isGroup) {
+        try {
+            const chat = await msg.getChat();
+            if (chat.isGroup) {
+                const participant = chat.participants.find(p => p.id._serialized === senderId);
+                if (participant && (participant.isAdmin || participant.isSuperAdmin)) {
+                    isSenderHostAdmin = true;
+                }
+            }
+        } catch (e) {
+            console.error('Gagal memverifikasi status admin grup:', e.message);
+        }
+    }
 
     // Inisialisasi peta sesi menu admin jika belum ada
     if (!global.adminMenuStates) {
@@ -4648,15 +4660,47 @@ async function handleIncomingMessage(msg) {
 
             await msg.reply(promoText);
 
-            io.emit('message_log', {
-                chatId: groupId,
-                body: `[Daftar Promo dikirim ke ${senderId.split('@')[0]}]`,
-                type: 'outgoing',
-                timestamp: Date.now()
-            });
-            return;
-        }
-        // ---------------------------------------------------------------
+             io.emit('message_log', {
+                 chatId: groupId,
+                 body: `[Daftar Promo dikirim ke ${senderId.split('@')[0]}]`,
+                 type: 'outgoing',
+                 timestamp: Date.now()
+             });
+             return;
+         }
+         
+         // ---- BAYAR/QRIS TRIGGER: ketik "bayar", "qris", "pembayaran" ----
+         const paymentKeywords = ['bayar', 'qris', 'pembayaran', 'cara bayar'];
+         if (paymentKeywords.includes(text)) {
+             const mediaPath = path.join('./media', 'Qris.jpeg');
+             if (fs.existsSync(mediaPath)) {
+                 try {
+                     const fileData = fs.readFileSync(mediaPath);
+                     const base64Data = fileData.toString('base64');
+                     const mimeType = getMimeType(mediaPath);
+                     const mediaObj = new MessageMedia(mimeType, base64Data, path.basename(mediaPath));
+                     await msg.reply(`💵 *QRIS PEMBAYARAN RESMI JAJAN DIGITAL* 💵\n\n` +
+                                     `Silakan scan QRIS di atas untuk melakukan pembayaran.\n\n` +
+                                     `*⚠️ Penting:* Setelah melakukan pembayaran, silakan kirimkan bukti transfer/pembayaran berupa foto/screenshot di grup ini.`);
+                     await client.sendMessage(groupId, mediaObj, { quotedMessageId: msg.id._serialized });
+                     
+                     io.emit('message_log', {
+                         chatId: groupId,
+                         body: `[QRIS Pembayaran dikirim ke ${senderId.split('@')[0]}]`,
+                         type: 'outgoing',
+                         timestamp: Date.now()
+                     });
+                     return;
+                 } catch (err) {
+                     console.error('Gagal mengirim media QRIS:', err.message);
+                 }
+             } else {
+                 await msg.reply(`💵 *PEMBAYARAN JAJAN DIGITAL* 💵\n\n` +
+                                 `Silakan hubungi admin untuk mendapatkan QRIS atau info rekening pembayaran resmi kami.`);
+                 return;
+             }
+         }
+         // ---------------------------------------------------------------
         
         // Cek pencocokan nama menu secara langsung (Direct Menu Name Trigger)
         const matchResult = findNodeByName(cfg.menuTree || { id: "root", name: "Menu Utama", type: "category", children: [] }, userMessage);
