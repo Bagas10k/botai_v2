@@ -4334,12 +4334,16 @@ async function handleIncomingMessage(msg) {
     const groupId = chatId; // Agar balasan dikirim kembali ke grup/chat pribadi pengirim
     const cleanBoss = config.boss_number ? (config.boss_number.replace(/\D/g, '') + '@c.us') : '';
 
-    // Intersepsi perintah Host Admin (Hanya jika di Grup)
-    if (isGroup && isSenderHostAdmin && (userMessage.startsWith('!') || userMessage.startsWith('.'))) {
+    // Intersepsi perintah Host Admin (Grup atau Chat Pribadi)
+    if (isSenderHostAdmin && (userMessage.startsWith('!') || userMessage.startsWith('.'))) {
         const cmd = userMessage.toLowerCase().trim();
             
             // .buka atau !toko buka
             if (cmd === '.buka' || cmd === '!toko buka') {
+                if (!isGroup) {
+                    await msg.reply("❌ Perintah ini hanya dapat digunakan di dalam grup.");
+                    return;
+                }
                 try {
                     const chat = await client.getChatById(groupId);
                     await chat.setMessagesAdminsOnly(false);
@@ -4352,6 +4356,10 @@ async function handleIncomingMessage(msg) {
             
             // .tutup atau !toko tutup
             if (cmd === '.tutup' || cmd === '!toko tutup') {
+                if (!isGroup) {
+                    await msg.reply("❌ Perintah ini hanya dapat digunakan di dalam grup.");
+                    return;
+                }
                 try {
                     const chat = await client.getChatById(groupId);
                     await chat.setMessagesAdminsOnly(true);
@@ -4364,6 +4372,10 @@ async function handleIncomingMessage(msg) {
             
             // .kick
             if (cmd === '.kick') {
+                if (!isGroup) {
+                    await msg.reply("❌ Perintah ini hanya dapat digunakan di dalam grup.");
+                    return;
+                }
                 if (msg.hasQuotedMsg) {
                     try {
                         const quotedMsg = await msg.getQuotedMessage();
@@ -4392,7 +4404,13 @@ async function handleIncomingMessage(msg) {
                         const contact = await client.getContactById(customerId);
                         const customerName = contact.pushname || contact.name || `Pelanggan`;
                         
-                        const statusVal = cmd === '.proses' ? '🔴 PROSES' : '🟢 DONE';
+                        const now = new Date();
+                        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Jakarta' };
+                        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Jakarta' };
+                        const waktuStr = now.toLocaleTimeString('id-ID', timeOptions) + ' WIB';
+                        const tanggalStr = now.toLocaleDateString('id-ID', dateOptions);
+                        
+                        const statusVal = cmd === '.proses' ? '🔴 PROSES' : '🟢 LUNAS / DONE';
                         const statusKey = cmd === '.proses' ? 'PROSES' : 'SELESAI';
                         const invoiceId = 'INV-' + Date.now().toString().substring(6);
                         
@@ -4416,16 +4434,19 @@ async function handleIncomingMessage(msg) {
                                 customer_name: customerName,
                                 status: statusKey,
                                 details: details,
-                                created_at: new Date().toISOString()
+                                created_at: now.toISOString()
                             });
                         }
                         
-                        const invoiceText = `📄 *INVOICE PEMBAYARAN* 📄\n\n` +
-                                            `*No Invoice:* ${invoiceId}\n` +
-                                            `*Nama Pelanggan:* ${customerName} (@${customerNumber})\n` +
-                                            `*Status:* *${statusVal}*\n` +
-                                            `*Tanggal:* ${new Date().toLocaleDateString('id-ID')}\n\n` +
-                                            `_Pesanan Anda sedang diproses oleh admin. Harap tunggu info selanjutnya._`;
+                        const invoiceText = `📄 *INVOICE PEMBAYARAN* 📄\n` +
+                                            `━━━━━━━━━━━━━━━━━━━━\n\n` +
+                                            `👤 *Nama:* ${customerName} (@${customerNumber})\n` +
+                                            `🆔 *Nomor ID:* ${invoiceId}\n` +
+                                            `📌 *Status:* *${statusVal}*\n` +
+                                            `📅 *Tanggal:* ${tanggalStr}\n` +
+                                            `⏰ *Waktu:* ${waktuStr}\n\n` +
+                                            `━━━━━━━━━━━━━━━━━━━━\n` +
+                                            `_Terima kasih atas pembayaran Anda! Pesanan Anda telah diverifikasi oleh admin._`;
                                             
                         await quotedMsg.reply(invoiceText, null, {
                             mentions: [customerId]
@@ -4441,6 +4462,10 @@ async function handleIncomingMessage(msg) {
             
             // .promote & .demote
             if (cmd === '.promote' || cmd === '.demote') {
+                if (!isGroup) {
+                    await msg.reply("❌ Perintah ini hanya dapat digunakan di dalam grup.");
+                    return;
+                }
                 if (msg.hasQuotedMsg) {
                     try {
                         const quotedMsg = await msg.getQuotedMessage();
