@@ -2683,10 +2683,10 @@ window.renderOrdersTable = function() {
         const dateFormatted = formatTransactionDate(order.created_at);
         
         const statusBadge = order.status === 'PENDING' 
-            ? `<span class="badge" style="background: rgba(255,214,10,0.15); color: #ffd60a; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">Menunggu</span>`
+            ? `<span class="badge" style="background: rgba(255,214,10,0.15); color: #ffd60a; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap; display: inline-block;">Menunggu</span>`
             : order.status === 'SELESAI'
-                ? `<span class="badge" style="background: rgba(48,209,88,0.15); color: #30d158; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">Selesai</span>`
-                : `<span class="badge" style="background: rgba(255,69,58,0.15); color: #ff453a; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">Batal</span>`;
+                ? `<span class="badge" style="background: rgba(48,209,88,0.15); color: #30d158; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap; display: inline-block;">Selesai</span>`
+                : `<span class="badge" style="background: rgba(255,69,58,0.15); color: #ff453a; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap; display: inline-block;">Batal</span>`;
                 
         tr.innerHTML = `
             <td style="padding: 12px 16px; font-weight: 500; font-family: monospace;">#${order.id}</td>
@@ -2784,9 +2784,14 @@ socket.on('order_created', (newOrder) => {
     }
 });
 
-// === INVOICES MANAGEMENT ===
 let allInvoices = [];
 let currentInvoiceFilter = 'ALL';
+let currentInvoiceSort = 'newest';
+
+window.sortInvoices = function(criteria) {
+    currentInvoiceSort = criteria;
+    renderInvoicesTable();
+};
 
 window.loadInvoices = async function() {
     try {
@@ -2829,10 +2834,37 @@ window.renderInvoicesTable = function() {
     if (!tbody) return;
     tbody.innerHTML = '';
     
-    const filtered = allInvoices.filter(i => {
+    let filtered = allInvoices.filter(i => {
         if (currentInvoiceFilter === 'ALL') return true;
         return i.status === currentInvoiceFilter;
     });
+    
+    // Sort logic
+    if (currentInvoiceSort === 'newest') {
+        filtered.sort((a, b) => {
+            const idA = parseInt((a.id || '').replace(/\D/g, ''), 10) || 0;
+            const idB = parseInt((b.id || '').replace(/\D/g, ''), 10) || 0;
+            return idB - idA;
+        });
+    } else if (currentInvoiceSort === 'oldest') {
+        filtered.sort((a, b) => {
+            const idA = parseInt((a.id || '').replace(/\D/g, ''), 10) || 0;
+            const idB = parseInt((b.id || '').replace(/\D/g, ''), 10) || 0;
+            return idA - idB;
+        });
+    } else if (currentInvoiceSort === 'name-asc') {
+        filtered.sort((a, b) => {
+            const nameA = (a.customer_name || '').toLowerCase();
+            const nameB = (b.customer_name || '').toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+    } else if (currentInvoiceSort === 'name-desc') {
+        filtered.sort((a, b) => {
+            const nameA = (a.customer_name || '').toLowerCase();
+            const nameB = (b.customer_name || '').toLowerCase();
+            return nameB.localeCompare(nameA);
+        });
+    }
     
     if (filtered.length === 0) {
         tbody.innerHTML = `
@@ -2850,8 +2882,8 @@ window.renderInvoicesTable = function() {
         const dateFormatted = formatTransactionDate(inv.created_at);
         
         const statusBadge = inv.status === 'PROSES' 
-            ? `<span class="badge" style="background: rgba(255,214,10,0.15); color: #ffd60a; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">Diproses</span>`
-            : `<span class="badge" style="background: rgba(48,209,88,0.15); color: #30d158; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">Selesai</span>`;
+            ? `<span class="badge" style="background: rgba(255,214,10,0.15); color: #ffd60a; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap; display: inline-block;">Diproses</span>`
+            : `<span class="badge" style="background: rgba(48,209,88,0.15); color: #30d158; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap; display: inline-block;">Selesai</span>`;
                 
         tr.innerHTML = `
             <td style="padding: 12px 16px; font-weight: 500; font-family: monospace;">#${inv.id}</td>
@@ -3172,5 +3204,16 @@ window.saveLocalNotes = async function() {
     } finally {
         btn.disabled = false;
         btn.innerHTML = oldHtml;
+    }
+};
+
+window.toggleOcrZone = function() {
+    const zone = document.getElementById('ocr-drag-drop-zone');
+    if (zone) {
+        if (zone.style.display === 'none') {
+            zone.style.display = 'block';
+        } else {
+            zone.style.display = 'none';
+        }
     }
 };

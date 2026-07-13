@@ -893,7 +893,7 @@
                             <button class="btn btn-secondary order-filter-btn" onclick="filterOrders('PENDING')" style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; min-height: auto; height: 30px;">Menunggu</button>
                             <button class="btn btn-secondary order-filter-btn" onclick="filterOrders('SELESAI')" style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; min-height: auto; height: 30px;">Selesai</button>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 6px;">
+                        <div style="display: flex; align-items: center; gap: 6px; margin-right: 8px;">
                             <label for="order-sort-select" style="font-size: 0.72rem; color: var(--text-secondary);">Sortir:</label>
                             <select id="order-sort-select" onchange="sortOrders(this.value)" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; background: var(--input-background); border: 1px solid var(--border-color); color: var(--text-color); height: 30px; outline: none; cursor: pointer;">
                                 <option value="newest">Terbaru (ID Desc)</option>
@@ -909,12 +909,12 @@
                         <table style="width: 100%; border-collapse: collapse; min-width: 500px; text-align: left;">
                             <thead>
                                 <tr style="border-bottom: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.03); position: sticky; top: 0; z-index: 10;">
-                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 40px; background: var(--surface);">ID</th>
-                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 120px; background: var(--surface);">Pelanggan</th>
-                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; background: var(--surface);">Detail Pesanan</th>
-                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 100px; background: var(--surface);">Tanggal</th>
-                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 80px; background: var(--surface);">Status</th>
-                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 110px; text-align: right; background: var(--surface);">Aksi</th>
+                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 8%; background: var(--surface);">ID</th>
+                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 22%; background: var(--surface);">Pelanggan</th>
+                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 40%; background: var(--surface);">Detail Pesanan</th>
+                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 16%; background: var(--surface);">Tanggal</th>
+                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 10%; background: var(--surface);">Status</th>
+                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 4%; text-align: right; background: var(--surface);">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="orders-table-body">
@@ -935,6 +935,9 @@
                             </h2>
                         </div>
                         <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" onclick="toggleOcrZone()" style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; font-size: 0.75rem; min-height: auto; height: 32px; color: var(--blue);">
+                                <i data-lucide="upload-cloud" style="width: 12px; height: 12px;"></i> Unggah Struk (OCR)
+                            </button>
                             <button class="btn btn-secondary" onclick="loadInvoices()" style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; font-size: 0.75rem; min-height: auto; height: 32px;">
                                 <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i> Refresh
                             </button>
@@ -942,7 +945,7 @@
                     </div>
                     
                     <!-- Drag-and-Drop OCR Receipt Image Uploader -->
-                    <div id="ocr-drag-drop-zone" style="margin-bottom: 12px; border: 1.5px dashed rgba(10, 132, 255, 0.25); background: rgba(10, 132, 255, 0.01); border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.3s ease; position: relative; flex-shrink: 0;">
+                    <div id="ocr-drag-drop-zone" style="display: none; margin-bottom: 12px; border: 1.5px dashed rgba(10, 132, 255, 0.25); background: rgba(10, 132, 255, 0.01); border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.3s ease; position: relative; flex-shrink: 0;">
                         <input type="file" id="ocr-file-input" accept="image/*" style="display: none;">
                         <i data-lucide="upload-cloud" style="width: 24px; height: 24px; color: #0a84ff; margin-bottom: 4px; pointer-events: none;"></i>
                         <h3 style="margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--text-color); pointer-events: none;">Unggah Struk Pembayaran (OCR)</h3>
@@ -952,25 +955,36 @@
                             <span id="ocr-status-text" style="font-size: 0.7rem; color: var(--text-secondary);">Mengekstrak...</span>
                         </div>
                     </div>
-
-                    <!-- Filter Invoice -->
-                    <div style="margin-bottom: 12px; display: flex; justify-content: flex-end; gap: 6px; flex-shrink: 0;">
-                        <button class="btn btn-secondary invoice-filter-btn active" onclick="filterInvoices('ALL')" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; min-height: auto; height: 30px;">Semua</button>
-                        <button class="btn btn-secondary invoice-filter-btn" onclick="filterInvoices('PROSES')" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; min-height: auto; height: 30px; color: #ffd60a;">Diproses</button>
-                        <button class="btn btn-secondary invoice-filter-btn" onclick="filterInvoices('SELESAI')" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; min-height: auto; height: 30px; color: #30d158;">Selesai</button>
+ 
+                    <!-- Filter & Sortir Invoice -->
+                    <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-shrink: 0;">
+                        <div style="display: flex; gap: 6px;">
+                            <button class="btn btn-secondary invoice-filter-btn active" onclick="filterInvoices('ALL')" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; min-height: auto; height: 30px;">Semua</button>
+                            <button class="btn btn-secondary invoice-filter-btn" onclick="filterInvoices('PROSES')" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; min-height: auto; height: 30px; color: #ffd60a;">Diproses</button>
+                            <button class="btn btn-secondary invoice-filter-btn" onclick="filterInvoices('SELESAI')" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; min-height: auto; height: 30px; color: #30d158;">Selesai</button>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-right: 8px;">
+                            <label for="invoice-sort-select" style="font-size: 0.72rem; color: var(--text-secondary);">Sortir:</label>
+                            <select id="invoice-sort-select" onchange="sortInvoices(this.value)" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 6px; background: var(--input-background); border: 1px solid var(--border-color); color: var(--text-color); height: 30px; outline: none; cursor: pointer;">
+                                <option value="newest">Terbaru (ID Desc)</option>
+                                <option value="oldest">Terlama (ID Asc)</option>
+                                <option value="name-asc">Nama Pelanggan (A-Z)</option>
+                                <option value="name-desc">Nama Pelanggan (Z-A)</option>
+                            </select>
+                        </div>
                     </div>
-
+ 
                     <!-- Table Invoice Container (Scrollable) -->
                     <div class="table-container" style="flex: 1; overflow-y: auto; overflow-x: auto; background: rgba(255, 255, 255, 0.02); border-radius: 10px; border: 1px solid var(--border-color);">
                         <table style="width: 100%; border-collapse: collapse; min-width: 500px; text-align: left;">
                             <thead>
                                 <tr style="border-bottom: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.03); position: sticky; top: 0; z-index: 10;">
-                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 100px; background: var(--surface);">No Invoice</th>
-                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 120px; background: var(--surface);">Pelanggan</th>
-                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; background: var(--surface);">Detail Transaksi</th>
-                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 100px; background: var(--surface);">Tanggal</th>
-                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 80px; background: var(--surface);">Status</th>
-                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 110px; text-align: right; background: var(--surface);">Aksi</th>
+                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 15%; background: var(--surface);">No Invoice</th>
+                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 22%; background: var(--surface);">Pelanggan</th>
+                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 33%; background: var(--surface);">Detail Transaksi</th>
+                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 16%; background: var(--surface);">Tanggal</th>
+                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 10%; background: var(--surface);">Status</th>
+                                    <th style="padding: 8px 10px; font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; width: 4%; text-align: right; background: var(--surface);">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="invoices-table-body">
