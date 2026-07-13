@@ -614,10 +614,20 @@ app.get('/api/shop/pinned-chats', async (req, res) => {
         const client = getClient();
         if (!client || getStatus() !== 'CONNECTED') return res.json([]);
         const chats = await client.getChats();
-        const pinned = chats.filter(chat => chat.pinned && !chat.isGroup).map(chat => ({
-            id: chat.id._serialized,
-            name: chat.name || chat.id.user
-        }));
+        
+        const db = getDb();
+        const admins = await db.all('SELECT phone FROM shop_admins') || [];
+        const adminPhones = new Set(admins.map(a => a.phone));
+        
+        const pinned = chats.filter(chat => chat.pinned && !chat.isGroup).map(chat => {
+            const phone = chat.id.user || '';
+            return {
+                id: chat.id._serialized,
+                name: chat.name || phone,
+                phone: phone,
+                isHostAdmin: adminPhones.has(phone)
+            };
+        });
         res.json(pinned);
     } catch(err) {
         res.status(500).json({ error: err.message });
