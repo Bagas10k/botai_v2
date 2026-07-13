@@ -56,10 +56,21 @@ function cleanupHeadlessChrome() {
         if (process.platform !== 'win32') {
             return resolve();
         }
-        const killCmd = 'powershell -Command "Get-CimInstance Win32_Process -Filter \\"Name = \'chrome.exe\'\\" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like \'*--headless*\' -or $_.CommandLine -like \'*session*\' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"';
+        const sessionPath = path.join(__dirname, '../../../session');
+        const absoluteSessionPath = path.resolve(sessionPath);
+        
+        // Escape backslashes for PowerShell
+        const pathBackslashes = absoluteSessionPath.replace(/\\/g, '\\\\');
+        const pathForwardSlashes = absoluteSessionPath.replace(/\\/g, '/');
+        
+        // Escape single quotes just in case
+        const p1 = pathBackslashes.replace(/'/g, "''");
+        const p2 = pathForwardSlashes.replace(/'/g, "''");
+        
+        const killCmd = `powershell -Command "Get-CimInstance Win32_Process -Filter \\"Name = 'chrome.exe'\\" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like '*${p1}*' -or $_.CommandLine -like '*${p2}*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"`;
+        
         exec(killCmd, () => {
             setTimeout(() => {
-                const sessionPath = path.join(__dirname, '../../../session');
                 if (fs.existsSync(sessionPath)) {
                     const removeLocks = (dir) => {
                         try {
