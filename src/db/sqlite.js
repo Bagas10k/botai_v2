@@ -133,68 +133,117 @@ async function initDatabase() {
             )
         `);
 
-        // Handle Legacy Migrations if needed
-        const rows = await db.all('SELECT key, value FROM key_value_store');
-        const hasData = rows.length > 0;
+        // 1. Migrate from database.json if it exists (first time migration)
+        if (fs.existsSync(DATABASE_FILE)) {
+            try {
+                console.log('[DB] database.json ditemukan. Memigrasikan data ke key_value_store...');
+                const raw = fs.readFileSync(DATABASE_FILE, 'utf-8');
+                const legacyData = JSON.parse(raw);
+
+                // Save log_history to key_value_store
+                await db.run('INSERT OR REPLACE INTO key_value_store (key, value) VALUES (?, ?)', 'log_history', JSON.stringify(legacyData.log_history || { finance: [], agenda: [] }));
+
+                // Save other legacy fields to key_value_store temporarily
+                await db.run('INSERT OR REPLACE INTO key_value_store (key, value) VALUES (?, ?)', 'group_configs', JSON.stringify(legacyData.group_configs || { group_configs: {} }));
+                await db.run('INSERT OR REPLACE INTO key_value_store (key, value) VALUES (?, ?)', 'chat_sessions', JSON.stringify(legacyData.chat_sessions || {}));
+                await db.run('INSERT OR REPLACE INTO key_value_store (key, value) VALUES (?, ?)', 'shop_data', JSON.stringify(legacyData.shop_data || { host_admins: [], customers: [] }));
+                await db.run('INSERT OR REPLACE INTO key_value_store (key, value) VALUES (?, ?)', 'reminders', JSON.stringify(legacyData.reminders || []));
+
+                fs.renameSync(DATABASE_FILE, DATABASE_FILE + '.bak');
+                console.log('[DB] database.json berhasil diimpor ke key_value_store.');
+            } catch (e) {
+                console.error('[DB] Gagal memigrasikan database.json:', e.message);
+            }
+        }
+
+        // 2. Perform table-specific migrations from key_value_store if the tables are empty
         
-        if (!hasData) {
-            console.log('[DB] SQLite kosong. Memeriksa database lama/file JSON untuk migrasi...');
-            let legacyData = {
-                chat_sessions: {},
-                log_history: { finance: [], agenda: [] },
-                reminders: [],
-                group_configs: { group_configs: {} },
-                shop_data: { host_admins: [], customers: [] }
-            };
-
-            if (fs.existsSync(DATABASE_FILE)) {
+        // A. Migrate group_configs
+        const gcCheck = await db.get('SELECT COUNT(*) as count FROM group_configs');
+        if (gcCheck.count === 0) {
+            const kvGc = await db.get("SELECT value FROM key_value_store WHERE key = 'group_configs'");
+            if (kvGc && kvGc.value) {
                 try {
-                    const raw = fs.readFileSync(DATABASE_FILE, 'utf-8');
-                    legacyData = JSON.parse(raw);
-                    console.log('[DB] database.json ditemukan. Memigrasikan data...');
-                    fs.renameSync(DATABASE_FILE, DATABASE_FILE + '.bak');
-                } catch (e) {
-                    console.error('Gagal membaca database.json lama:', e);
+                    const parsed = JSON.parse(kvGc.value);
+                    const gc = parsed.group_configs || {};
+                    for (const gid of Object.keys(gc)) {
+                        const conf = gc[gid] || {};
+                        await db.run('INSERT OR REPLACE INTO group_configs (group_id, group_name, bot_active, welcome_message, custom_rules, settings) VALUES (?, ?, ?, ?, ?, ?)',
+                            gid, conf.group_name || '', conf.bot_active !== false ? 1 : 0, conf.welcome_message || '', JSON.stringify(conf.custom_rules || []), JSON.stringify(conf)
+                        );
+                    }
+                    console.log(`[DB Migration] Berhasil memigrasikan ${Object.keys(gc).length} group configs dari key_value_store.`);
+                } catch(e) {
+                    console.error('[DB Migration] Gagal migrasi group_configs:', e.message);
                 }
             }
+        }
 
-            // Save log_history to key_value_store
-            await db.run('INSERT OR REPLACE INTO key_value_store (key, value) VALUES (?, ?)', 'log_history', JSON.stringify(legacyData.log_history || { finance: [], agenda: [] }));
-
-            // Migrate group_configs
-            const gc = legacyData.group_configs?.group_configs || {};
-            for (const gid of Object.keys(gc)) {
-                const conf = gc[gid] || {};
-                await db.run('INSERT OR REPLACE INTO group_configs (group_id, group_name, bot_active, welcome_message, custom_rules, settings) VALUES (?, ?, ?, ?, ?, ?)',
-                    gid, conf.group_name || '', conf.bot_active !== false ? 1 : 0, conf.welcome_message || '', JSON.stringify(conf.custom_rules || []), JSON.stringify(conf)
-                );
-            }
-
-            // Migrate chat_sessions
-            const cs = legacyData.chat_sessions || {};
-            for (const sid of Object.keys(cs)) {
-                await db.run('INSERT OR REPLACE INTO chat_sessions (session_id, messages) VALUES (?, ?)', sid, JSON.stringify(cs[sid] || []));
-            }
-
-            // Migrate shop admins and customers
-            const sd = legacyData.shop_data || { host_admins: [], customers: [] };
-            for (const admin of sd.host_admins || []) {
-                if (admin && admin.phone) {
-                    await db.run('INSERT OR REPLACE INTO shop_admins (phone, name) VALUES (?, ?)', admin.phone, admin.name || '');
+        // B. Migrate chat_sessions
+        const csCheck = await db.get('SELECT COUNT(*) as count FROM chat_sessions');
+        if (csCheck.count === 0) {
+            const kvCs = await db.get("SELECT value FROM key_value_store WHERE key = 'chat_sessions'");
+            if (kvCs && kvCs.value) {
+                try {
+                    const cs = JSON.parse(kvCs.value) || {};
+                    let count = 0;
+                    for (const sid of Object.keys(cs)) {
+                        await db.run('INSERT OR REPLACE INTO chat_sessions (session_id, messages) VALUES (?, ?)', sid, JSON.stringify(cs[sid] || []));
+                        count++;
+                    }
+                    console.log(`[DB Migration] Berhasil memigrasikan ${count} chat_sessions dari key_value_store.`);
+                } catch(e) {
+                    console.error('[DB Migration] Gagal migrasi chat_sessions:', e.message);
                 }
             }
-            for (const cust of sd.customers || []) {
-                if (cust && cust.phone) {
-                    await db.run('INSERT OR REPLACE INTO shop_customers (phone, name) VALUES (?, ?)', cust.phone, cust.name || '');
+        }
+
+        // C. Migrate shop admins & customers
+        const adminCheck = await db.get('SELECT COUNT(*) as count FROM shop_admins');
+        const customerCheck = await db.get('SELECT COUNT(*) as count FROM shop_customers');
+        if (adminCheck.count === 0 && customerCheck.count === 0) {
+            const kvSd = await db.get("SELECT value FROM key_value_store WHERE key = 'shop_data'");
+            if (kvSd && kvSd.value) {
+                try {
+                    const sd = JSON.parse(kvSd.value) || { host_admins: [], customers: [] };
+                    let adminCount = 0;
+                    let customerCount = 0;
+                    for (const admin of sd.host_admins || []) {
+                        const phone = typeof admin === 'string' ? admin : (admin ? admin.phone : '');
+                        const name = typeof admin === 'string' ? 'Host Admin' : (admin ? (admin.name || 'Host Admin') : 'Host Admin');
+                        if (phone) {
+                            await db.run('INSERT OR REPLACE INTO shop_admins (phone, name) VALUES (?, ?)', phone, name);
+                            adminCount++;
+                        }
+                    }
+                    for (const cust of sd.customers || []) {
+                        if (cust && cust.phone) {
+                            await db.run('INSERT OR REPLACE INTO shop_customers (phone, name) VALUES (?, ?)', cust.phone, cust.name || '');
+                            customerCount++;
+                        }
+                    }
+                    console.log(`[DB Migration] Berhasil memigrasikan ${adminCount} admins & ${customerCount} customers dari key_value_store.`);
+                } catch(e) {
+                    console.error('[DB Migration] Gagal migrasi shop_data:', e.message);
                 }
             }
+        }
 
-            // Migrate reminders
-            for (const rem of legacyData.reminders || []) {
-                await db.run('INSERT INTO reminders (phone, message, time, is_active) VALUES (?, ?, ?, ?)', rem.phone, rem.message, rem.time, rem.is_active !== false ? 1 : 0);
+        // D. Migrate reminders
+        const reminderCheck = await db.get('SELECT COUNT(*) as count FROM reminders');
+        if (reminderCheck.count === 0) {
+            const kvRem = await db.get("SELECT value FROM key_value_store WHERE key = 'reminders'");
+            if (kvRem && kvRem.value) {
+                try {
+                    const reminders = JSON.parse(kvRem.value) || [];
+                    for (const rem of reminders) {
+                        await db.run('INSERT INTO reminders (phone, message, time, is_active) VALUES (?, ?, ?, ?)', rem.phone, rem.message, rem.time, rem.is_active !== false ? 1 : 0);
+                    }
+                    console.log(`[DB Migration] Berhasil memigrasikan ${reminders.length} reminders dari key_value_store.`);
+                } catch(e) {
+                    console.error('[DB Migration] Gagal migrasi reminders:', e.message);
+                }
             }
-
-            console.log('[DB] Migrasi data legacy selesai.');
         }
 
         console.log('[DB] SQLite dan seluruh tabel siap digunakan.');
