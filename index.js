@@ -1041,8 +1041,16 @@ app.post('/api/import', uploadZip.single('backup'), async (req, res) => {
 
         if (needsDbReopen) {
             try {
+                // Tunggu sebentar agar OS selesai menulis file
+                await new Promise(r => setTimeout(r, 500));
                 await initDatabase();
                 console.log('[Import] Koneksi database SQLite berhasil dibuka kembali.');
+                
+                // Verifikasi — pastikan group_configs terbaca
+                const freshDb = getDb();
+                const gcRows = await freshDb.all('SELECT group_id FROM group_configs');
+                const kvRows = await freshDb.all('SELECT key FROM key_value_store');
+                console.log(`[Import] Verifikasi DB: ${gcRows.length} group config, ${kvRows.length} kv entries.`);
             } catch (err) {
                 console.error('[Import] Gagal membuka kembali database SQLite:', err.message);
             }

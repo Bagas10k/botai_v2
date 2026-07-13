@@ -3104,8 +3104,25 @@ window.doImport = function() {
                     <strong>✅ ${data.message}</strong><br>
                     📁 ${restoredCount} file berhasil dipulihkan<br>
                     ${errorCount > 0 ? `⚠️ ${errorCount} file gagal<br>` : ''}
-                    <small style="color:#888;">Bot perlu di-restart agar perubahan database aktif sepenuhnya.</small>
+                    <small style="color:#888;">Memuat ulang data grup dari database...</small>
                 `;
+                
+                // Auto-reload grup list setelah 1.5 detik agar SQLite selesai diinisialisasi
+                setTimeout(async () => {
+                    try {
+                        if (typeof loadGroupsList === 'function') {
+                            await loadGroupsList();
+                        }
+                        resultDiv.innerHTML = `
+                            <strong>✅ ${data.message}</strong><br>
+                            📁 ${restoredCount} file berhasil dipulihkan<br>
+                            ${errorCount > 0 ? `⚠️ ${errorCount} file gagal<br>` : ''}
+                            <small style="color:#25d366; font-weight:600;">✓ Data grup berhasil dimuat ulang dari database!</small>
+                        `;
+                    } catch (err) {
+                        console.warn('Auto-reload grup gagal:', err);
+                    }
+                }, 1500);
             } else {
                 resultDiv.style.background = 'rgba(231,76,60,0.08)';
                 resultDiv.style.borderLeft = '3px solid #e74c3c';
