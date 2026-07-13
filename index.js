@@ -46,8 +46,30 @@ const PORT = config.port || 3000;
 
 app.use(express.json());
 
-// Global Session Token Store (In-Memory)
-const activeSessions = new Set();
+// Global Session Token Store (Persistent JSON to survive restarts)
+const SESSIONS_FILE = './sessions.json';
+let activeSessions = new Set();
+
+function loadSessions() {
+    try {
+        if (fs.existsSync(SESSIONS_FILE)) {
+            const data = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf-8'));
+            activeSessions = new Set(data);
+        }
+    } catch (e) {
+        console.error('[Auth] Gagal memuat file sesi:', e.message);
+    }
+}
+
+function saveSessions() {
+    try {
+        fs.writeFileSync(SESSIONS_FILE, JSON.stringify(Array.from(activeSessions)), 'utf-8');
+    } catch (e) {
+        console.error('[Auth] Gagal menyimpan file sesi:', e.message);
+    }
+}
+
+loadSessions();
 
 const ADMIN_USERNAME = config.admin_username || 'admin';
 const ADMIN_PASSWORD = config.admin_password || 'bagas123';
@@ -93,6 +115,7 @@ app.post('/api/login', (req, res) => {
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
         const token = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
         activeSessions.add(token);
+        saveSessions();
         res.cookie('session_token', token, { httpOnly: true, secure: false, maxAge: 24 * 60 * 60 * 1000 }); // 24 jam
         return res.json({ success: true });
     }
@@ -107,6 +130,7 @@ app.post('/api/logout', (req, res) => {
             const [k, v] = part.trim().split('=');
             if (k === 'session_token') {
                 activeSessions.delete(v);
+                saveSessions();
                 break;
             }
         }
