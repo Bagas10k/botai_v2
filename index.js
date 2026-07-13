@@ -1134,6 +1134,22 @@ process.on('uncaughtException', (err) => {
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Promise Rejection dideteksi pada:', promise, 'alasan:', reason);
+    
+    const errMsg = reason ? reason.toString() : '';
+    if (errMsg.includes('Execution context was destroyed') || 
+        errMsg.includes('Navigating frame was detached') || 
+        errMsg.includes('Session closed') ||
+        errMsg.includes('Target closed') ||
+        errMsg.includes('evaluate')) {
+        
+        console.log('[WA Recovery] Terdeteksi error Puppeteer/WA. Mencoba pemulihan otomatis...');
+        const { restartClient, getStatus } = require('./src/services/whatsapp/client');
+        if (getStatus() !== 'CONNECTED') {
+            setTimeout(() => {
+                restartClient(false).catch(err => console.error('[WA Recovery] Gagal restart:', err.message));
+            }, 5000);
+        }
+    }
 });
 
 // Bootstrapping App

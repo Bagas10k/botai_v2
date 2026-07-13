@@ -173,10 +173,16 @@ function updateConnectionStatus(status) {
     } else if (status === 'QR_RECEIVED') {
         statusDot.classList.add('initializing');
         statusText.textContent = 'Menunggu Pindai QR';
+        qrContainer.classList.remove('hidden');
         activeSessionInfo.classList.add('hidden');
     } else {
         statusDot.classList.add('disconnected');
         statusText.textContent = 'Terputus (Offline)';
+        if (!qrPlaceholder.querySelector('canvas')) {
+            qrContainer.classList.add('hidden');
+        } else {
+            qrContainer.classList.remove('hidden');
+        }
         activeSessionInfo.classList.add('hidden');
     }
     if (window.lucide) {
