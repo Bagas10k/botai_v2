@@ -206,7 +206,8 @@ function attachClientListeners() {
         }
     });
 
-    client.on('group_join', async (notification) => {
+    client.on('group_participants_update', async (notification) => {
+        if (!['add', 'invite', 'linked_group_join'].includes(notification.action)) return;
         try {
             const groupId = notification.chatId;
             const { group_configs: gConfigs } = await getGroupConfigs();
@@ -240,7 +241,14 @@ function attachClientListeners() {
                     userTag = `${displayName}`;
                 }
                 
-                const finalMessage = welcomeTemplate.replace('@user', userTag);
+                let finalMessage = welcomeTemplate;
+                if (finalMessage.includes('@user')) {
+                    finalMessage = finalMessage.replace(/@user/g, userTag);
+                }
+                if (finalMessage.includes('@nama')) {
+                    finalMessage = finalMessage.replace(/@nama/g, displayName || 'Pelanggan');
+                }
+                
                 await client.sendMessage(groupId, finalMessage, {
                     mentions: [contact]
                 });
