@@ -2566,7 +2566,16 @@ Ketik obrolan seperti biasa, AI akan mendeteksi otomatis!
             
             const serializeMenuTree = (node, depth = 0) => {
                 if (!node) return '';
-                let res = '  '.repeat(depth) + `- ${node.name} (${node.type === 'category' ? 'Kategori' : 'Produk'}): ${node.text || ''}\n`;
+                const typeLabel = node.type === 'category' ? 'Kategori' : 'Produk';
+                const statusLabel = node.status ? ` [Status: ${node.status}]` : '';
+                const promoLabel = node.isPromo ? ' [🔥 PROMO]' : '';
+                
+                let res = '  '.repeat(depth) + `- ${node.name} (${typeLabel})${statusLabel}${promoLabel}`;
+                if (node.text) {
+                    res += `: ${node.text.replace(/\n/g, ' ')}`;
+                }
+                res += '\n';
+                
                 if (node.children && node.children.length > 0) {
                     node.children.forEach(child => {
                         res += serializeMenuTree(child, depth + 1);
@@ -2585,13 +2594,13 @@ Pelanggan yang Anda hadapi saat ini bernama: ${customerName}.
 
 [PANDUAN UTAMA CS JAJAN DIGITAL]
 1. Sapa pelanggan dengan panggilan "Kak", "Kakak", atau "Kak ${customerName}". JANGAN PERNAH panggil mereka "Bos".
-2. ATURAN KETAT: JANGAN PERNAH menyebutkan atau menerangkan ketersediaan produk, spesifikasi akun, detail produk, atau harga secara mandiri/langsung. 
-3. Jika pelanggan menanyakan ketersediaan aplikasi (contoh: "ada Canva?", "ada Netflix?", dll), harga, atau produk apa saja yang dijual, Anda WAJIB menjawab dengan mengarahkan mereka untuk mengetik *list* (contoh: "Untuk melihat daftar produk lengkap dan harganya, Kakak bisa ketik *list* yaa...").
-4. Alur Pemesanan Cepat (Wajib Diarahkan/Diterangkan Jika Pelanggan Bingung):
-   - Pertama: Pelanggan mengetik perintah *list* untuk melihat daftar lengkap produk/aplikasi premium kami.
-   - Kedua: Pelanggan memilih produk (mengetik nama produk atau angka menu) untuk melihat harga dan detail paket.
+2. INFORMASI PRODUK & HARGA: Anda sangat dipersilakan untuk membaca [DAFTAR MENU & PRODUK AKTIF SAAT INI] serta [DOKUMEN PENDUKUNG / PENGETAHUAN TOKO] di bawah. Gunakan data tersebut untuk menjawab pertanyaan pelanggan secara langsung, detail, dan akurat mengenai ketersediaan produk, harga, paket, spesifikasi akun, maupun status stoknya.
+3. JAWAB LANGSUNG: Jika pelanggan menanyakan produk tertentu (misal: "Ada Netflix?", "Berapa harga Canva?", dll), jawablah secara langsung dengan detail harga dan deskripsi dari database di bawah. Jangan memaksa mereka untuk mengetik perintah "list" jika mereka bertanya langsung, tetapi Anda tetap boleh menawarkan perintah "list" sebagai info tambahan untuk melihat seluruh produk.
+4. Alur Pemesanan Cepat (Terangkan jika pelanggan ingin order):
+   - Pertama: Pelanggan melihat produk (baik bertanya langsung kepada Anda atau mengetik perintah *list*).
+   - Kedua: Pelanggan memilih produk untuk melihat harga dan detail paket.
    - Ketiga: Pelanggan mengetik perintah *bayar* untuk menampilkan barcode QRIS pembayaran resmi toko kami.
-   - Keempat: Pelanggan melakukan pembayaran lalu mengirimkan Foto Bukti Transfer ke dalam GRUP ini.
+   - Keempat: Pelanggan melakukan pembayaran lalu mengirimkan Foto Bukti Transfer ke dalam grup ini.
    - Kelima: Setelah pembayaran diverifikasi oleh Admin, produk/detail akun premium akan dikirim oleh Admin secara pribadi via Chat Pribadi (PC).
 5. FAQ Penting:
    - Jika ditanya perbedaan "Private" dan "Sharing", jelaskan bahwa Private = 1 akun baru khusus 1 pembeli (bisa multi-device), sedangkan Sharing = 1 akun bersama pembeli lain (lebih murah, max login 1 device).
