@@ -349,6 +349,46 @@ async function handleIncomingMessage(msg) {
 
     if (chatId === 'status@broadcast') return;
 
+    // Wrap msg.reply to support @user (mention) and @nama (pushname)
+    const originalReply = msg.reply.bind(msg);
+    msg.reply = async (content, chatIdOrOptions, options) => {
+        let opt = options;
+        let cid = chatIdOrOptions;
+        if (chatIdOrOptions && typeof chatIdOrOptions === 'object') {
+            opt = chatIdOrOptions;
+            cid = undefined;
+        }
+        opt = opt || {};
+
+        if (typeof content === 'string') {
+            try {
+                const contact = await msg.getContact();
+                const pushname = contact.pushname || 'Pelanggan';
+                const userMentionId = contact.id.user;
+                const mentionTag = `@${userMentionId}`;
+                
+                let replacedContent = content;
+                let mentions = [];
+                
+                if (replacedContent.includes('@user')) {
+                    replacedContent = replacedContent.replace(/@user/g, mentionTag);
+                    mentions.push(contact);
+                }
+                if (replacedContent.includes('@nama')) {
+                    replacedContent = replacedContent.replace(/@nama/g, pushname);
+                }
+                
+                if (mentions.length > 0) {
+                    opt.mentions = (opt.mentions || []).concat(mentions);
+                }
+                return await originalReply(replacedContent, cid, opt);
+            } catch (err) {
+                console.error('Error in custom msg.reply wrapper:', err);
+            }
+        }
+        return await originalReply(content, chatIdOrOptions, options);
+    };
+
     const isGroup = msg.isGroupMsg || chatId.includes('@g.us');
     
     const isSenderBoss = (() => {
