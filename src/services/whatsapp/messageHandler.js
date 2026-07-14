@@ -2591,6 +2591,14 @@ Ketik obrolan seperti biasa, AI akan mendeteksi otomatis!
             };
             const serializedMenu = activeCfg ? serializeMenuTree(activeCfg.menuTree) : 'Belum ada menu produk terkonfigurasi.';
             
+            const schedule = activeCfg && activeCfg.autoCloseSchedule ? activeCfg.autoCloseSchedule : { enabled: false };
+            let scheduleText = 'Toko buka 24 jam.';
+            if (schedule.enabled) {
+                const daysMap = { 1: 'Senin', 2: 'Selasa', 3: 'Rabu', 4: 'Kamis', 5: 'Jumat', 6: 'Sabtu', 0: 'Minggu', 7: 'Minggu' };
+                const activeDaysStr = schedule.activeDays ? schedule.activeDays.map(d => daysMap[d]).join(', ') : 'Setiap Hari';
+                scheduleText = `Toko buka & beroperasi pada hari: ${activeDaysStr} mulai jam ${schedule.openTime || '08:00'} sampai ${schedule.closeTime || '22:00'} WIB. Di luar jam operasional tersebut sistem toko tutup/offline otomatis.`;
+            }
+            
             const contact = await msg.getContact();
             const customerName = contact.pushname || contact.name || 'Kakak';
             
@@ -2613,6 +2621,9 @@ Pelanggan yang Anda hadapi saat ini bernama: ${customerName}.
    - Durasi 25 - 30 hari dihitung penuh sebagai 1 Bulan.
 6. Jawablah secara singkat, ramah, padat, dan hindari penjelasan bertele-tele.
 
+[JADWAL OPERASIONAL TOKO]
+${scheduleText}
+
 [DAFTAR MENU & PRODUK AKTIF SAAT INI]
 ${serializedMenu}
 
@@ -2620,7 +2631,7 @@ ${serializedMenu}
 ${knowledge}
 `.trim();
 
-            console.log(`[CS AI] Memproses pesan pelanggan ${chatId}: "${userMessage}"`);
+            console.log(`[CS AI] Memproses pesan pelanggan ${chatId}: "${userMessage}" menggunakan config grup: "${activeCfg ? activeCfg.groupName : 'Tanpa Grup'}" (${configGroupId}) dengan ${activeCfg && activeCfg.menuTree && activeCfg.menuTree.children ? activeCfg.menuTree.children.length : 0} produk.`);
             const response = await generateGroupAiResponse(userMessage, customerPrompt, chatId);
             const aiReply = response.reply || 'Ada yang bisa saya bantu, Kak?';
             await msg.reply(aiReply);
