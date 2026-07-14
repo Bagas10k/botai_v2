@@ -1317,6 +1317,10 @@ window.saveGroupConfiguration = async function() {
         allowedKnowledgeFiles.push(cb.value);
     });
     
+    const paymentType = document.getElementById('host-payment-type') ? document.getElementById('host-payment-type').value : 'qris';
+    const paymentMedia = document.getElementById('host-payment-media') ? document.getElementById('host-payment-media').value.trim() : 'Qris.jpeg';
+    const paymentText = document.getElementById('host-payment-text') ? document.getElementById('host-payment-text').value : '';
+
     const payload = {
         groupName: selectedGroupConfig.groupName,
         enabled,
@@ -1334,7 +1338,10 @@ window.saveGroupConfiguration = async function() {
         universalFooter,
         welcomeMessage,
         autoCloseSchedule,
-        extraTriggers
+        extraTriggers,
+        paymentType,
+        paymentMedia,
+        paymentText
     };
     
     try {
@@ -2309,6 +2316,13 @@ window.saveHostWelcomeMsg = async function() {
                 group.config = group.config || {};
                 group.config.welcomeMessage = msgVal;
             }
+            if (selectedGroupId === gId) {
+                if (selectedGroupConfig) {
+                    selectedGroupConfig.welcomeMessage = msgVal;
+                }
+                const mainWelcomeInput = document.getElementById('grp-welcome-message');
+                if (mainWelcomeInput) mainWelcomeInput.value = msgVal;
+            }
         } else {
             throw new Error(await res.text());
         }
@@ -2355,6 +2369,13 @@ window.saveHostPaymentSettings = async function() {
                 group.config.paymentType = pType;
                 group.config.paymentMedia = pMedia;
                 group.config.paymentText = pText;
+            }
+            if (selectedGroupId === gId) {
+                if (selectedGroupConfig) {
+                    selectedGroupConfig.paymentType = pType;
+                    selectedGroupConfig.paymentMedia = pMedia;
+                    selectedGroupConfig.paymentText = pText;
+                }
             }
         } else {
             throw new Error(await res.text());

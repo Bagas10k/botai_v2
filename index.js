@@ -572,7 +572,7 @@ app.get('/api/groups', async (req, res) => {
             const groups = Object.keys(gConfigs).map(id => {
                 const cfg = gConfigs[id];
                 const cleanName = (cfg.groupName && !cfg.groupName.includes('@g.us')) ? cfg.groupName : id;
-                return { id, name: cleanName, isConfigured: true, enabled: cfg.enabled };
+                return { id, name: cleanName, isConfigured: true, enabled: cfg.enabled, config: cfg };
             });
             return res.json(groups);
         }
@@ -591,7 +591,8 @@ app.get('/api/groups', async (req, res) => {
                 id: g.id._serialized,
                 name: cleanName,
                 isConfigured: isConfigured,
-                enabled: cfg.enabled !== false
+                enabled: cfg.enabled !== false,
+                config: cfg
             });
         });
         
@@ -603,7 +604,8 @@ app.get('/api/groups', async (req, res) => {
                     id,
                     name: cleanName,
                     isConfigured: true,
-                    enabled: cfg.enabled
+                    enabled: cfg.enabled,
+                    config: cfg
                 });
             }
         });

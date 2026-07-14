@@ -207,7 +207,7 @@ function attachClientListeners() {
     });
 
     client.on('group_participants_update', async (notification) => {
-        if (!['add', 'invite', 'linked_group_join'].includes(notification.action)) return;
+        if (!['add', 'invite', 'linked_group_join'].includes(notification.type)) return;
         try {
             const groupId = notification.chatId;
             const { group_configs: gConfigs } = await getGroupConfigs();
@@ -236,10 +236,7 @@ function attachClientListeners() {
                 }
                 
                 const userMentionId = participantId.split('@')[0];
-                let userTag = `@${userMentionId}`;
-                if (displayName) {
-                    userTag = `${displayName}`;
-                }
+                const userTag = `@${userMentionId}`;
                 
                 let finalMessage = welcomeTemplate;
                 if (finalMessage.includes('@user')) {
