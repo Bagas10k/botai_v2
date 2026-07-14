@@ -611,10 +611,21 @@ async function handleIncomingMessage(msg) {
                 adminSession.step = 'add_product_select_group';
                 adminSession.groupIds = groupIds;
                 let listText9 = `🛍️ *TAMBAH PRODUK KE MENU*\n\nPilih grup tujuan dengan mengetik nomornya:\n\n`;
-                groupIds.forEach((gId, idx) => {
+                let idx9 = 0;
+                for (const gId of groupIds) {
                     const gCfg = gConfigs[gId];
-                    listText9 += `${idx + 1}. ${gCfg.groupName || gId}\n`;
-                });
+                    let displayName = gId;
+                    if (gCfg.groupName && !gCfg.groupName.includes('@g.us')) {
+                        displayName = gCfg.groupName;
+                    } else if (clientInstance) {
+                        try {
+                            const chat = await clientInstance.getChatById(gId);
+                            if (chat && chat.name) displayName = chat.name;
+                        } catch (_) {}
+                    }
+                    listText9 += `${idx9 + 1}. ${displayName}\n`;
+                    idx9++;
+                }
                 listText9 += `\n_Ketik *batal* untuk membatalkan._`;
                 await msg.reply(listText9);
                 return;
@@ -628,10 +639,21 @@ async function handleIncomingMessage(msg) {
                 adminSession.step = 'edit_product_select_group';
                 adminSession.groupIds = groupIds;
                 let listText10 = `✏️ *EDIT / HAPUS PRODUK MENU*\n\nPilih grup yang produknya ingin diedit:\n\n`;
-                groupIds.forEach((gId, idx) => {
+                let idx10 = 0;
+                for (const gId of groupIds) {
                     const gCfg = gConfigs[gId];
-                    listText10 += `${idx + 1}. ${gCfg.groupName || gId}\n`;
-                });
+                    let displayName = gId;
+                    if (gCfg.groupName && !gCfg.groupName.includes('@g.us')) {
+                        displayName = gCfg.groupName;
+                    } else if (clientInstance) {
+                        try {
+                            const chat = await clientInstance.getChatById(gId);
+                            if (chat && chat.name) displayName = chat.name;
+                        } catch (_) {}
+                    }
+                    listText10 += `${idx10 + 1}. ${displayName}\n`;
+                    idx10++;
+                }
                 listText10 += `\n_Ketik *batal* untuk membatalkan._`;
                 await msg.reply(listText10);
                 return;

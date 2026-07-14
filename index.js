@@ -571,7 +571,8 @@ app.get('/api/groups', async (req, res) => {
             const { group_configs: gConfigs } = await getGroupConfigs();
             const groups = Object.keys(gConfigs).map(id => {
                 const cfg = gConfigs[id];
-                return { id, name: cfg.groupName || id, isConfigured: true, enabled: cfg.enabled };
+                const cleanName = (cfg.groupName && !cfg.groupName.includes('@g.us')) ? cfg.groupName : id;
+                return { id, name: cleanName, isConfigured: true, enabled: cfg.enabled };
             });
             return res.json(groups);
         }
@@ -585,9 +586,10 @@ app.get('/api/groups', async (req, res) => {
         groupChats.forEach(g => {
             const isConfigured = configuredGroupIds.includes(g.id._serialized);
             const cfg = gConfigs[g.id._serialized] || {};
+            const cleanName = (cfg.groupName && !cfg.groupName.includes('@g.us')) ? cfg.groupName : (g.name || g.id._serialized);
             results.push({
                 id: g.id._serialized,
-                name: cfg.groupName || g.name || g.id._serialized,
+                name: cleanName,
                 isConfigured: isConfigured,
                 enabled: cfg.enabled !== false
             });
@@ -596,9 +598,10 @@ app.get('/api/groups', async (req, res) => {
         configuredGroupIds.forEach(id => {
             if (!results.find(r => r.id === id)) {
                 const cfg = gConfigs[id];
+                const cleanName = (cfg.groupName && !cfg.groupName.includes('@g.us')) ? cfg.groupName : id;
                 results.push({
                     id,
-                    name: cfg.groupName || id,
+                    name: cleanName,
                     isConfigured: true,
                     enabled: cfg.enabled
                 });
