@@ -455,6 +455,13 @@ async function loadConfig() {
         
         cfgMaxTokens.value = config.max_tokens || 1000;
         cfgSheetsUrl.value = config.google_sheets_url || '';
+        
+        window.currentPrivateChatSyncGroupId = config.private_chat_sync_group_id || '';
+        const syncSelect = document.getElementById('cfg-private-chat-sync-group-id');
+        if (syncSelect) {
+            syncSelect.value = window.currentPrivateChatSyncGroupId;
+        }
+
         cfgBossNumber.value = config.boss_number || '';
         cfgReportTime.value = config.report_time || '08:00';
         cfgSystemPrompt.value = config.system_prompt_template || '';
@@ -513,6 +520,7 @@ function setupConfigHandler() {
             boss_number: cfgBossNumber.value.trim(),
             report_time: cfgReportTime.value.trim(),
             system_prompt_template: cfgSystemPrompt.value.trim(),
+            private_chat_sync_group_id: document.getElementById('cfg-private-chat-sync-group-id').value,
             
             // Sertakan key & model provider lainnya agar tidak terhapus
             groq_api_keys: (document.getElementById('cfg-groq-api-keys').value || '').split('\n').map(k => k.trim()).filter(k => k.length > 0),
@@ -761,6 +769,7 @@ window.loadGroupsList = async function() {
         
         // Update select dropdown untuk modal salin konfig
         updateCloneSourceDropdown();
+        updatePrivateChatSyncDropdown();
     } catch (err) {
         console.error('Error loadGroupsList:', err);
         const container = document.getElementById('groups-list-container');
@@ -1392,6 +1401,27 @@ function updateCloneSourceDropdown() {
             select.appendChild(option);
         }
     });
+}
+
+function updatePrivateChatSyncDropdown() {
+    const select = document.getElementById('cfg-private-chat-sync-group-id');
+    if (!select) return;
+    
+    const currentValue = select.value;
+    select.innerHTML = '<option value="">-- Pilih Grup Penyelaras --</option>';
+    
+    activeGroups.forEach(g => {
+        const option = document.createElement('option');
+        option.value = g.id;
+        option.textContent = g.name;
+        select.appendChild(option);
+    });
+    
+    if (window.currentPrivateChatSyncGroupId) {
+        select.value = window.currentPrivateChatSyncGroupId;
+    } else if (currentValue) {
+        select.value = currentValue;
+    }
 }
 
 // Buka Modal

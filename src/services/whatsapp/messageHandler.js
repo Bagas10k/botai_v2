@@ -1244,7 +1244,7 @@ async function handleIncomingMessage(msg) {
     }
 
     const { group_configs: gConfigs } = await getGroupConfigs();
-    const configGroupId = isGroup ? chatId : Object.keys(gConfigs || {})[0];
+    const configGroupId = isGroup ? chatId : (config.private_chat_sync_group_id || Object.keys(gConfigs || {})[0]);
     const cfg = configGroupId ? gConfigs[configGroupId] : null;
     
     let activeCfg = cfg;
