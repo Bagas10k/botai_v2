@@ -1080,26 +1080,26 @@ app.post('/api/import', uploadZip.single('backup'), async (req, res) => {
 
         const zip = fs.createReadStream(zipPath).pipe(unzipper.Parse({ forceStream: true }));
         for await (const entry of zip) {
-            const entryPath = entry.path;
+            const entryPathNormalized = entry.path.replace(/\\/g, '/');
             const entryType = entry.type;
 
-            if (entryPath === 'README_RESTORE.txt' || entryPath.startsWith('__MACOSX')) {
+            if (entryPathNormalized === 'README_RESTORE.txt' || entryPathNormalized.startsWith('__MACOSX')) {
                 entry.autodrain();
                 continue;
             }
 
-            const rootName = entryPath.split('/')[0];
+            const rootName = entryPathNormalized.split('/')[0];
             if (!ALLOWED_ROOTS.includes(rootName)) {
                 entry.autodrain();
-                results.skipped.push(entryPath);
+                results.skipped.push(entry.path);
                 continue;
             }
 
-            const destPath = path.resolve('.', entryPath);
+            const destPath = path.resolve('.', entryPathNormalized);
             const baseDir = path.resolve('.');
             if (!destPath.startsWith(baseDir)) {
                 entry.autodrain();
-                results.errors.push(`Path tidak aman dilewati: ${entryPath}`);
+                results.errors.push(`Path tidak aman dilewati: ${entry.path}`);
                 continue;
             }
 
