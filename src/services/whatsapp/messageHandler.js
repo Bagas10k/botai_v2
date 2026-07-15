@@ -349,6 +349,16 @@ async function handleIncomingMessage(msg) {
 
     if (chatId === 'status@broadcast') return;
 
+    // Jika pesan dari nomor bot sendiri, abaikan jika bukan command/shortcut agar tidak looping respons
+    if (msg.fromMe) {
+        const cleanMsg = userMessage.toLowerCase().trim();
+        const isCommand = userMessage.startsWith('!') || 
+                          userMessage.startsWith('.') || 
+                          cleanMsg.startsWith('#agenda') ||
+                          (msg.hasQuotedMsg && ['done', 'doen', 'proses', 'process'].includes(cleanMsg));
+        if (!isCommand) return;
+    }
+
     // Wrap msg.reply to support @user (mention) and @nama (pushname)
     const originalReply = msg.reply.bind(msg);
     msg.reply = async (content, chatIdOrOptions, options) => {
@@ -400,7 +410,7 @@ async function handleIncomingMessage(msg) {
     })();
 
     let isSenderHostAdmin = false;
-    const senderId = msg.author || msg.from;
+    const senderId = msg.fromMe ? (clientInstance && clientInstance.info ? clientInstance.info.wid._serialized : (msg.author || msg.from)) : (msg.author || msg.from);
     const sender = senderId.split('@')[0].replace(/\D/g, '') + '@c.us';
     const senderLid = senderId.split('@')[0].replace(/\D/g, '') + '@lid';
     

@@ -257,7 +257,7 @@ function attachClientListeners() {
         }
     });
 
-    client.on('message', handleIncomingMessage);
+    client.on('message_create', handleIncomingMessage);
 }
 
 function createNewClient(io) {
