@@ -1430,8 +1430,28 @@ async function handleIncomingMessage(msg) {
             if (isProcessCmd || isDoneCmd) {
                 if (msg.hasQuotedMsg) {
                     try {
-                        const quotedMsg = await msg.getQuotedMessage();
-                        const customerId = quotedMsg.author || quotedMsg.from;
+                        let quotedMsg = null;
+                        let customerId = null;
+                        let details = 'Tidak ada detail';
+                        
+                        try {
+                            quotedMsg = await msg.getQuotedMessage();
+                            customerId = quotedMsg.author || quotedMsg.from;
+                            details = quotedMsg.body || (quotedMsg.hasMedia ? '[Bukti Gambar/Media]' : '') || 'Tidak ada detail';
+                        } catch (quoteErr) {
+                            console.warn('[Invoice Warning] Gagal memanggil getQuotedMessage(), menggunakan data mentah:', quoteErr.message);
+                            customerId = msg.quotedParticipant || (msg._data && msg._data.quotedParticipant) || (msg._data && msg._data.quotedMsg && (msg._data.quotedMsg.author || msg._data.quotedMsg.from));
+                            
+                            const rawQuoted = msg.quotedMsg || (msg._data && msg._data.quotedMsg);
+                            if (rawQuoted) {
+                                details = rawQuoted.body || (rawQuoted.type === 'image' || rawQuoted.type === 'video' ? '[Bukti Gambar/Media]' : '') || 'Tidak ada detail';
+                            }
+                        }
+                        
+                        if (!customerId) {
+                            throw new Error('Tidak dapat mendeteksi nomor pengirim bukti pembayaran.');
+                        }
+                        
                         const customerNumber = customerId.split('@')[0];
                         
                         let customerName = 'Pelanggan';
@@ -1451,8 +1471,6 @@ async function handleIncomingMessage(msg) {
                         const statusVal = isProcessCmd ? '🔴 PROSES' : '🟢 LUNAS / DONE';
                         const statusKey = isProcessCmd ? 'PROSES' : 'SELESAI';
                         const invoiceId = 'INV-' + Date.now().toString().substring(6);
-                        
-                        const details = quotedMsg.body || (quotedMsg.hasMedia ? '[Bukti Gambar/Media]' : '') || 'Tidak ada detail';
                         
                         const db = getDb();
                         if (db) {
@@ -1488,9 +1506,15 @@ async function handleIncomingMessage(msg) {
                                             `_Terima kasih atas pembayaran Anda! Pesanan Anda telah diverifikasi oleh admin._`;
                                              
                         try {
-                            await quotedMsg.reply(invoiceText, null, {
-                                mentions: [customerId]
-                            });
+                            if (quotedMsg) {
+                                await quotedMsg.reply(invoiceText, null, {
+                                    mentions: [customerId]
+                                });
+                            } else {
+                                await msg.reply(invoiceText, null, {
+                                    mentions: [customerId]
+                                });
+                            }
                         } catch (replyErr) {
                             console.warn('[Invoice Warning] Gagal mereply quoted msg, kirim langsung:', replyErr.message);
                             await msg.reply(invoiceText, null, {
