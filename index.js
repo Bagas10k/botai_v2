@@ -577,7 +577,20 @@ app.get('/api/groups', async (req, res) => {
             return res.json(groups);
         }
         
-        const chats = await client.getChats();
+        let chats = [];
+        try {
+            chats = await client.getChats();
+        } catch (err) {
+            console.warn('[API Groups] Gagal mengambil chats via client.getChats(), fallback ke DB:', err.message);
+            const { group_configs: gConfigs } = await getGroupConfigs();
+            const groups = Object.keys(gConfigs).map(id => {
+                const cfg = gConfigs[id];
+                const cleanName = (cfg.groupName && !cfg.groupName.includes('@g.us')) ? cfg.groupName : id;
+                return { id, name: cleanName, isConfigured: true, enabled: cfg.enabled, config: cfg };
+            });
+            return res.json(groups);
+        }
+        
         const groupChats = chats.filter(chat => chat.isGroup);
         const { group_configs: gConfigs } = await getGroupConfigs();
         const configuredGroupIds = Object.keys(gConfigs);
@@ -666,7 +679,14 @@ app.get('/api/shop/pinned-chats', async (req, res) => {
     try {
         const client = getClient();
         if (!client || getStatus() !== 'CONNECTED') return res.json([]);
-        const chats = await client.getChats();
+        
+        let chats = [];
+        try {
+            chats = await client.getChats();
+        } catch (err) {
+            console.warn('[API Pinned Chats] Gagal mengambil chats via client.getChats(), fallback ke []:', err.message);
+            return res.json([]);
+        }
         
         const db = getDb();
         const admins = await db.all('SELECT phone FROM shop_admins') || [];
