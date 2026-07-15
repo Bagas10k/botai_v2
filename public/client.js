@@ -1598,6 +1598,9 @@ window.loadHostAdmins = async function() {
                             <div style="width: 18px; height: 18px; background: white; border-radius: 50%; position: absolute; top: 2px; left: ${chat.isHostAdmin ? '18px' : '2px'}; transition: left 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>
                         </div>
                     </div>
+                    <button class="btn btn-icon" onclick="window.removeHostAdminDirect('${chat.id}')" title="Hapus Admin" style="background: transparent; border: none; padding: 4px; color: #ff453a; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                    </button>
                 </div>
             `;
             
@@ -1614,6 +1617,69 @@ window.loadHostAdmins = async function() {
         if (window.lucide) lucide.createIcons();
     } catch (err) {
         console.error('Error loadHostAdmins:', err);
+    }
+};
+
+window.addHostAdminManual = async function() {
+    const input = document.getElementById('new-host-admin-phone');
+    if (!input) return;
+    const phone = input.value.replace(/\D/g, '');
+    if (!phone) {
+        alert('Silakan masukkan nomor HP yang valid (hanya angka).');
+        return;
+    }
+    
+    try {
+        const resAdmins = await fetch('/api/shop/admins');
+        if (!resAdmins.ok) throw new Error('Gagal mengambil daftar admin');
+        let adminsList = await resAdmins.json();
+        
+        if (!adminsList.includes(phone)) {
+            adminsList.push(phone);
+        } else {
+            alert('Nomor HP sudah terdaftar sebagai Host Admin.');
+            return;
+        }
+        
+        const saveRes = await fetch('/api/shop/admins', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ admins: adminsList })
+        });
+        
+        if (!saveRes.ok) throw new Error(await saveRes.text());
+        
+        input.value = '';
+        alert('Berhasil menambahkan Host Admin!');
+        loadHostAdmins();
+    } catch(err) {
+        alert('Gagal menambahkan Host Admin: ' + err.message);
+    }
+};
+
+window.removeHostAdminDirect = async function(jid) {
+    const cleanPhone = jid.replace('@c.us', '').replace(/\D/g, '');
+    if (!confirm(`Apakah Anda yakin ingin menghapus nomor +${cleanPhone} dari Host Admin?`)) return;
+    
+    try {
+        const resAdmins = await fetch('/api/shop/admins');
+        if (!resAdmins.ok) throw new Error('Gagal mengambil daftar admin');
+        let adminsList = await resAdmins.json();
+        
+        adminsList = adminsList.filter(a => a !== cleanPhone);
+        
+        const saveRes = await fetch('/api/shop/admins', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ admins: adminsList })
+        });
+        
+        if (!saveRes.ok) throw new Error(await saveRes.text());
+        
+        alert('Berhasil menghapus Host Admin!');
+        loadHostAdmins();
+    } catch(err) {
+        alert('Gagal menghapus Host Admin: ' + err.message);
     }
 };
 
