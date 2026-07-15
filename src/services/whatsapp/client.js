@@ -49,11 +49,36 @@ if (process.platform === 'android') {
 
 function cleanupHeadlessChrome() {
     return new Promise((resolve) => {
-        if (process.platform !== 'win32') {
-            return resolve();
-        }
         const sessionPath = path.join(__dirname, '../../../session');
         const absoluteSessionPath = path.resolve(sessionPath);
+
+        if (process.platform !== 'win32') {
+            // Linux: bunuh proses chrome terkait sessionPath dan hapus lock files
+            const killCmd = `pkill -9 -f "${absoluteSessionPath}"`;
+            exec(killCmd, () => {
+                setTimeout(() => {
+                    if (fs.existsSync(sessionPath)) {
+                        const removeLocks = (dir) => {
+                            try {
+                                const entries = fs.readdirSync(dir, { withFileTypes: true });
+                                for (const entry of entries) {
+                                    const fullPath = path.join(dir, entry.name);
+                                    if (entry.isDirectory()) {
+                                        removeLocks(fullPath);
+                                    } else if (entry.name === 'LOCK' || entry.name === 'SingletonLock') {
+                                        try { fs.unlinkSync(fullPath); } catch(_) {}
+                                    }
+                                }
+                            } catch(_) {}
+                        };
+                        removeLocks(sessionPath);
+                        console.log('[Cleanup Linux] Chrome dihentikan & semua file LOCK sesi dihapus.');
+                    }
+                    resolve();
+                }, 1500);
+            });
+            return;
+        }
         
         // Escape backslashes for PowerShell
         const pathBackslashes = absoluteSessionPath.replace(/\\/g, '\\\\');
