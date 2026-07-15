@@ -98,10 +98,12 @@ async function syncPinnedHostAdmins() {
         const chats = await client.getChats();
         const pinnedAdmins = chats
             .filter(chat => chat.pinned && !chat.isGroup)
-            .map(chat => chat.id.user + '@c.us');
+            .map(chat => chat.id.user.replace(/\D/g, ''));
         
         for (const adminPhone of pinnedAdmins) {
-            await addAdmin(adminPhone, 'Pinned Host Admin');
+            if (adminPhone) {
+                await addAdmin(adminPhone, 'Pinned Host Admin');
+            }
         }
         
         console.log(`[Host Admin] Sinkronisasi ${pinnedAdmins.length} Host Admin dari chat tersemat.`);

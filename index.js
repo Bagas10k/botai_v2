@@ -680,15 +680,18 @@ app.get('/api/shop/pinned-chats', async (req, res) => {
         const client = getClient();
         const db = getDb();
         const admins = await db.all('SELECT phone FROM shop_admins') || [];
-        const adminPhones = new Set(admins.map(a => a.phone));
+        const adminPhones = new Set(admins.map(a => a.phone.replace(/\D/g, '')));
         
         const fallbackToDbAdmins = () => {
-            return admins.map(a => ({
-                id: `${a.phone}@c.us`,
-                name: a.phone,
-                phone: a.phone,
-                isHostAdmin: true
-            }));
+            return admins.map(a => {
+                const clean = a.phone.replace(/\D/g, '');
+                return {
+                    id: `${clean}@c.us`,
+                    name: clean,
+                    phone: clean,
+                    isHostAdmin: true
+                };
+            });
         };
         
         if (!client || getStatus() !== 'CONNECTED') {
@@ -705,7 +708,7 @@ app.get('/api/shop/pinned-chats', async (req, res) => {
         
         // Chat pribadi tersemat (pinned & not group)
         const pinned = chats.filter(chat => chat.pinned && !chat.isGroup).map(chat => {
-            const phone = chat.id.user || '';
+            const phone = (chat.id.user || '').replace(/\D/g, '');
             return {
                 id: chat.id._serialized,
                 name: chat.name || phone,
@@ -717,11 +720,12 @@ app.get('/api/shop/pinned-chats', async (req, res) => {
         // Gabungkan dengan admin terdaftar di DB yang tidak ada di daftar tersemat agar tetap muncul
         const pinnedPhones = new Set(pinned.map(p => p.phone));
         admins.forEach(a => {
-            if (!pinnedPhones.has(a.phone)) {
+            const clean = a.phone.replace(/\D/g, '');
+            if (clean && !pinnedPhones.has(clean)) {
                 pinned.push({
-                    id: `${a.phone}@c.us`,
-                    name: a.phone,
-                    phone: a.phone,
+                    id: `${clean}@c.us`,
+                    name: clean,
+                    phone: clean,
                     isHostAdmin: true
                 });
             }
@@ -736,7 +740,8 @@ app.get('/api/shop/pinned-chats', async (req, res) => {
 app.get('/api/shop/admins', async (req, res) => {
     try {
         const shopData = await getShopData();
-        res.json(shopData.host_admins || []);
+        const cleanAdmins = (shopData.host_admins || []).map(a => a.replace(/\D/g, ''));
+        res.json(cleanAdmins);
     } catch(err) {
         res.status(500).json({ error: err.message });
     }
@@ -754,9 +759,13 @@ app.post('/api/shop/admins', async (req, res) => {
         await db.run('DELETE FROM shop_admins');
         
         // Tambahkan admin yang baru
+        const added = new Set();
         for (const phone of admins) {
-            const cleanPhone = phone.split('@')[0];
-            await addAdmin(cleanPhone, 'Admin Host');
+            const cleanPhone = phone.split('@')[0].replace(/\D/g, '');
+            if (cleanPhone && !added.has(cleanPhone)) {
+                await addAdmin(cleanPhone, 'Admin Host');
+                added.add(cleanPhone);
+            }
         }
         res.json({ success: true });
     } catch(err) {
