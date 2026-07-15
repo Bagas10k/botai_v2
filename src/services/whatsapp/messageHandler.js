@@ -346,6 +346,7 @@ async function sendGroupDetailMenu(msg, groupId, senderId) {
 async function handleIncomingMessage(msg) {
     const chatId = msg.from;
     let userMessage = msg.body ? msg.body.trim() : '';
+    console.log(`[DEBUG CHAT] Pesan: "${userMessage}" | Dari: ${chatId} | Author: ${msg.author || 'N/A'} | fromMe: ${msg.fromMe} | hasQuoted: ${msg.hasQuotedMsg}`);
 
     if (chatId === 'status@broadcast') return;
 
@@ -434,6 +435,8 @@ async function handleIncomingMessage(msg) {
             console.error('Gagal memverifikasi status admin grup:', e.message);
         }
     }
+    
+    console.log(`[DEBUG ADMIN] senderId: ${senderId} | isSenderHostAdmin: ${isSenderHostAdmin} | isSenderBoss: ${isSenderBoss}`);
     
     // Auto-prefix dot for invoice command if it's a quote/reply and matches keywords
     if (isSenderHostAdmin && msg.hasQuotedMsg) {
