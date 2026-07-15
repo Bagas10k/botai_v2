@@ -946,6 +946,24 @@ app.post('/api/host-admin/welcome-message', async (req, res) => {
     }
 });
 
+app.post('/api/host-admin/goodbye-message', async (req, res) => {
+    try {
+        const { groupId, goodbyeMessage } = req.body;
+        const { group_configs: gConfigs } = await getGroupConfigs();
+        const gCfg = gConfigs[groupId];
+        if (gCfg) {
+            gCfg.goodbyeMessage = goodbyeMessage;
+            await saveGroupConfig(groupId, gCfg);
+            io.emit('group_config_updated', { groupId });
+            res.json({ success: true });
+        } else {
+            res.status(404).json({ error: 'Grup tidak ditemukan' });
+        }
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/host-admin/payment-settings', async (req, res) => {
     try {
         const { groupId, paymentType, paymentMedia, paymentText } = req.body;

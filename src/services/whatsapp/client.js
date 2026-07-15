@@ -234,23 +234,41 @@ function attachClientListeners() {
     });
 
     client.on('group_participants_update', async (notification) => {
-        if (!['add', 'invite', 'linked_group_join'].includes(notification.type)) return;
+        const isJoin = ['add', 'invite', 'linked_group_join'].includes(notification.type);
+        const isLeave = ['remove', 'leave'].includes(notification.type);
+        if (!isJoin && !isLeave) return;
+
         try {
             const groupId = notification.chatId;
             const { group_configs: gConfigs } = await getGroupConfigs();
             const cfg = gConfigs[groupId];
             if (!cfg || !cfg.enabled) return;
             
-            const welcomeTemplate = cfg.welcomeMessage || "Halo @user, selamat bergabung! Disini kami menyediakan berbagai apk paket premium yang murah untuk anda. Ketik *list* untuk melihat produk kami.";
-            
+            // Pilih template pesan berdasarkan event
+            let template = '';
+            if (isJoin) {
+                template = cfg.welcomeMessage || "Halo @user, selamat bergabung! Disini kami menyediakan berbagai apk paket premium yang murah untuk anda. Ketik *list* untuk melihat produk kami.";
+            } else {
+                template = cfg.goodbyeMessage || "Selamat tinggal @user, terima kasih atas waktu Anda!";
+            }
+
+            if (!template || template.trim() === '') return;
+
             let groupChat = null;
             try { groupChat = await client.getChatById(groupId); } catch(_) {}
             
             for (const participantId of notification.recipientIds) {
-                const contact = await client.getContactById(participantId);
-                
+                let contact = { id: { _serialized: participantId } };
                 let displayName = '';
-                if (groupChat && groupChat.participants) {
+                
+                try {
+                    contact = await client.getContactById(participantId);
+                    displayName = contact.pushname || contact.name || '';
+                } catch (contactErr) {
+                    console.warn('[Welcome/Goodbye Warning] Gagal mendapatkan profil kontak, menggunakan fallback:', contactErr.message);
+                }
+                
+                if (!displayName && groupChat && groupChat.participants) {
                     const participant = groupChat.participants.find(p => 
                         p.id && p.id._serialized === participantId
                     );
@@ -258,14 +276,11 @@ function attachClientListeners() {
                         displayName = participant.name;
                     }
                 }
-                if (!displayName) {
-                    displayName = contact.pushname || '';
-                }
                 
                 const userMentionId = participantId.split('@')[0];
                 const userTag = `@${userMentionId}`;
                 
-                let finalMessage = welcomeTemplate;
+                let finalMessage = template;
                 if (finalMessage.includes('@user')) {
                     finalMessage = finalMessage.replace(/@user/g, userTag);
                 }
@@ -273,12 +288,13 @@ function attachClientListeners() {
                     finalMessage = finalMessage.replace(/@nama/g, displayName || 'Pelanggan');
                 }
                 
+                // Kirim pesan ke grup dengan mention
                 await client.sendMessage(groupId, finalMessage, {
                     mentions: [contact]
                 });
             }
         } catch (err) {
-            console.error('Gagal mengirim pesan selamat datang:', err.message);
+            console.error('Gagal mengirim pesan welcome/goodbye:', err.message);
         }
     });
 

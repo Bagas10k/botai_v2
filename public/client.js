@@ -870,6 +870,7 @@ window.selectGroup = async function(groupId) {
         document.getElementById('grp-universal-header').value = selectedGroupConfig.universalHeader || '';
         document.getElementById('grp-universal-footer').value = selectedGroupConfig.universalFooter || '';
         document.getElementById('grp-welcome-message').value = selectedGroupConfig.welcomeMessage || '';
+        document.getElementById('grp-goodbye-message').value = selectedGroupConfig.goodbyeMessage || '';
         
         // Auto Close Schedule
         const schedule = selectedGroupConfig.autoCloseSchedule || { enabled: false, openTime: '08:00', closeTime: '17:00', activeDays: [1,2,3,4,5] };
@@ -1289,6 +1290,7 @@ window.saveGroupConfiguration = async function() {
     const universalHeader = document.getElementById('grp-universal-header').value.trim();
     const universalFooter = document.getElementById('grp-universal-footer').value.trim();
     const welcomeMessage = document.getElementById('grp-welcome-message').value.trim();
+    const goodbyeMessage = document.getElementById('grp-goodbye-message').value.trim();
     
     // Auto Close Schedule
     const activeDays = [];
@@ -1338,6 +1340,7 @@ window.saveGroupConfiguration = async function() {
         universalHeader,
         universalFooter,
         welcomeMessage,
+        goodbyeMessage,
         autoCloseSchedule,
         extraTriggers,
         paymentType,
@@ -2111,6 +2114,10 @@ window.onHostGroupSelectChange = function() {
     if (welcomeInput) {
         welcomeInput.value = (group.config && group.config.welcomeMessage) || '';
     }
+    const goodbyeInput = document.getElementById('host-group-goodbye-msg');
+    if (goodbyeInput) {
+        goodbyeInput.value = (group.config && group.config.goodbyeMessage) || '';
+    }
 
     // Update Scheduler UI
     const schedToggle = document.getElementById('host-scheduler-toggle');
@@ -2449,6 +2456,45 @@ window.saveHostWelcomeMsg = async function() {
         }
     } catch(err) {
         alert('Gagal menyimpan pesan selamat datang: ' + err.message);
+    }
+};
+
+// Save specific group goodbye message
+window.saveHostGoodbyeMsg = async function() {
+    const select = document.getElementById('host-config-group-select');
+    if (!select) return;
+    const gId = select.value;
+    if (!gId) return;
+
+    const msgVal = document.getElementById('host-group-goodbye-msg').value;
+
+    try {
+        const res = await fetch('/api/host-admin/goodbye-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ groupId: gId, goodbyeMessage: msgVal })
+        });
+
+        if (res.ok) {
+            alert('Pesan selamat tinggal berhasil disimpan!');
+            // Refresh local state
+            const group = hostConfigActiveGroups.find(g => g.id === gId);
+            if (group) {
+                group.config = group.config || {};
+                group.config.goodbyeMessage = msgVal;
+            }
+            if (selectedGroupId === gId) {
+                if (selectedGroupConfig) {
+                    selectedGroupConfig.goodbyeMessage = msgVal;
+                }
+                const mainGoodbyeInput = document.getElementById('grp-goodbye-message');
+                if (mainGoodbyeInput) mainGoodbyeInput.value = msgVal;
+            }
+        } else {
+            throw new Error(await res.text());
+        }
+    } catch(err) {
+        alert('Gagal menyimpan pesan selamat tinggal: ' + err.message);
     }
 };
 
