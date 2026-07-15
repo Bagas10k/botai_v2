@@ -345,7 +345,7 @@ async function sendGroupDetailMenu(msg, groupId, senderId) {
 // Main Handler Pesan Masuk
 async function handleIncomingMessage(msg) {
     const chatId = msg.from;
-    const userMessage = msg.body ? msg.body.trim() : '';
+    let userMessage = msg.body ? msg.body.trim() : '';
 
     if (chatId === 'status@broadcast') return;
 
@@ -422,6 +422,15 @@ async function handleIncomingMessage(msg) {
             }
         } catch (e) {
             console.error('Gagal memverifikasi status admin grup:', e.message);
+        }
+    }
+    
+    // Auto-prefix dot for invoice command if it's a quote/reply and matches keywords
+    if (isSenderHostAdmin && msg.hasQuotedMsg) {
+        const cleanMsg = userMessage.toLowerCase().trim();
+        if (['done', 'doen', 'proses', 'process'].includes(cleanMsg)) {
+            userMessage = '.' + cleanMsg;
+            console.log(`[Auto-Command] Mengubah pesan admin "${cleanMsg}" menjadi "${userMessage}" karena mendeteksi balasan bukti pembayaran.`);
         }
     }
 
@@ -1393,7 +1402,7 @@ async function handleIncomingMessage(msg) {
                 return;
             }
             
-            if (cmd === '.proses' || cmd === '.done') {
+            if (cmd === '.proses' || cmd === '.done' || cmd === '.doen' || cmd === '.process') {
                 if (msg.hasQuotedMsg) {
                     try {
                         const quotedMsg = await msg.getQuotedMessage();
@@ -1408,8 +1417,9 @@ async function handleIncomingMessage(msg) {
                         const waktuStr = now.toLocaleTimeString('id-ID', timeOptions) + ' WIB';
                         const tanggalStr = now.toLocaleDateString('id-ID', dateOptions);
                         
-                        const statusVal = cmd === '.proses' ? '🔴 PROSES' : '🟢 LUNAS / DONE';
-                        const statusKey = cmd === '.proses' ? 'PROSES' : 'SELESAI';
+                        const isProcessCmd = cmd === '.proses' || cmd === '.process';
+                        const statusVal = isProcessCmd ? '🔴 PROSES' : '🟢 LUNAS / DONE';
+                        const statusKey = isProcessCmd ? 'PROSES' : 'SELESAI';
                         const invoiceId = 'INV-' + Date.now().toString().substring(6);
                         
                         const details = quotedMsg.body || (quotedMsg.hasMedia ? '[Bukti Gambar/Media]' : '') || 'Tidak ada detail';
@@ -1454,7 +1464,7 @@ async function handleIncomingMessage(msg) {
                         await msg.reply("❌ Gagal memproses invoice: " + err.message);
                     }
                 } else {
-                    await msg.reply("⚠️ Balas/quote pesan bukti pembayaran dari pelanggan dengan mengetik *.proses* atau *.done*");
+                    await msg.reply("⚠️ Balas/quote pesan bukti pembayaran dari pelanggan dengan mengetik *.proses* atau *.done* / *.doen*");
                 }
                 return;
             }
