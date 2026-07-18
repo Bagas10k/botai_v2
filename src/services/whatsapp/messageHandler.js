@@ -2114,6 +2114,9 @@ async function handleIncomingMessage(msg) {
     
     // AI Fallback inside Group
     if (isGroup) {
+        if (config.group_ai_enabled === false) {
+            return;
+        }
         if (!activeCfg || !activeCfg.useAiFallback) {
             return;
         }
@@ -2707,6 +2710,13 @@ Ketik obrolan seperti biasa, AI akan mendeteksi otomatis!
 
     // 6. CUSTOMER SERVICE AI FALLBACK FOR CLIENTS
     if (!isSenderHostAdmin) {
+        if (!isGroup && config.private_ai_enabled === false) {
+            return;
+        }
+        if (isGroup && config.group_ai_enabled === false) {
+            return;
+        }
+
         activeLocks.add(chatId);
         try {
             try {

@@ -469,6 +469,16 @@ async function loadConfig() {
             privateBotEnabled.checked = config.private_chat_bot_enabled !== false;
         }
 
+        const groupAiEnabled = document.getElementById('cfg-group-ai-enabled');
+        if (groupAiEnabled) {
+            groupAiEnabled.checked = config.group_ai_enabled !== false;
+        }
+
+        const privateAiEnabled = document.getElementById('cfg-private-ai-enabled');
+        if (privateAiEnabled) {
+            privateAiEnabled.checked = config.private_ai_enabled !== false;
+        }
+
         cfgBossNumber.value = config.boss_number || '';
         cfgReportTime.value = config.report_time || '08:00';
         cfgSystemPrompt.value = config.system_prompt_template || '';
@@ -532,6 +542,8 @@ function setupConfigHandler() {
             system_prompt_template: cfgSystemPrompt.value.trim(),
             private_chat_sync_group_id: document.getElementById('cfg-private-chat-sync-group-id').value,
             private_chat_bot_enabled: document.getElementById('cfg-private-chat-bot-enabled') ? document.getElementById('cfg-private-chat-bot-enabled').checked : true,
+            group_ai_enabled: document.getElementById('cfg-group-ai-enabled') ? document.getElementById('cfg-group-ai-enabled').checked : true,
+            private_ai_enabled: document.getElementById('cfg-private-ai-enabled') ? document.getElementById('cfg-private-ai-enabled').checked : true,
             auto_send_vcard: document.getElementById('cfg-auto-send-vcard').checked,
             vcard_name: document.getElementById('cfg-vcard-name').value.trim(),
             
