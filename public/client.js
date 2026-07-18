@@ -848,31 +848,60 @@ let selectedNodeId = null;
 // Ambil Daftar Grup dari API
 window.loadGroupsList = async function() {
     const container = document.getElementById('groups-list-container');
+    let resPending = true;
+
     if (container) {
         container.innerHTML = `
-            <div class="progress-bar-container" style="padding: 20px 10px; text-align: center;">
-                <p style="font-size: 0.8rem; color: var(--text-color-muted); margin-bottom: 8px;">Menghubungkan &amp; menyelaraskan data grup...</p>
-                <div style="background: rgba(255,255,255,0.05); height: 6px; border-radius: 3px; overflow: hidden; border: 1px solid var(--border-color);">
-                    <div id="group-loading-progress" style="width: 10%; height: 100%; background: linear-gradient(90deg, var(--primary-color), #5856d6); transition: width 0.8s ease-in-out; box-shadow: 0 0 8px var(--primary-color);"></div>
+            <div class="progress-bar-container" style="padding: 24px 16px; text-align: center; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border-color); margin: 10px 0;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px;">
+                    <div style="display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(10, 132, 255, 0.1); border-top-color: #0a84ff; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                    <p id="group-loading-text" style="font-size: 0.8rem; font-weight: 500; color: var(--text-color-muted); margin: 0;">Menginisialisasi pencarian grup...</p>
                 </div>
+                <div style="background: rgba(255,255,255,0.05); height: 8px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color); position: relative;">
+                    <div id="group-loading-progress" style="width: 15%; height: 100%; background: linear-gradient(90deg, #0a84ff, #5856d6); transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px rgba(10, 132, 255, 0.4);"></div>
+                </div>
+                <span id="group-loading-percentage" style="display: block; font-size: 0.72rem; color: var(--text-color-muted); font-weight: 600; margin-top: 8px;">15%</span>
             </div>
         `;
-        setTimeout(() => {
-            const prog = document.getElementById('group-loading-progress');
-            if (prog) prog.style.width = '85%';
-        }, 50);
+        
+        const textEl = document.getElementById('group-loading-text');
+        const progEl = document.getElementById('group-loading-progress');
+        const pctEl = document.getElementById('group-loading-percentage');
+        
+        const steps = [
+            { time: 800, pct: 40, text: "Menghubungkan ke obrolan WhatsApp..." },
+            { time: 1600, pct: 70, text: "Memilah obrolan bertipe Grup..." },
+            { time: 2500, pct: 90, text: "Menyinkronkan pengaturan database..." }
+        ];
+        
+        steps.forEach(s => {
+            setTimeout(() => {
+                if (resPending && textEl && progEl && pctEl) {
+                    textEl.innerText = s.text;
+                    progEl.style.width = `${s.pct}%`;
+                    pctEl.innerText = `${s.pct}%`;
+                }
+            }, s.time);
+        });
     }
 
     try {
         const res = await fetch('/api/groups');
-        if (!res.ok) throw new Error('Gagal mengambil daftar grup');
+        resPending = false;
         
-        const prog = document.getElementById('group-loading-progress');
-        if (prog) {
-            prog.style.width = '100%';
+        const textEl = document.getElementById('group-loading-text');
+        const progEl = document.getElementById('group-loading-progress');
+        const pctEl = document.getElementById('group-loading-percentage');
+        
+        if (textEl && progEl && pctEl) {
+            textEl.innerText = "Selesai! Memuat tampilan...";
+            progEl.style.width = '100%';
+            pctEl.innerText = '100%';
             await new Promise(resolve => setTimeout(resolve, 300));
         }
 
+        if (!res.ok) throw new Error('Gagal mengambil daftar grup');
+        
         activeGroups = await res.json();
         renderGroupsListSidebar();
         
@@ -883,10 +912,21 @@ window.loadGroupsList = async function() {
             updateBroadcastGroupDropdown();
         }
     } catch (err) {
+        resPending = false;
         console.error('Error loadGroupsList:', err);
         const container = document.getElementById('groups-list-container');
         if (container) {
-            container.innerHTML = `<p style="color:#ff453a; text-align:center; font-size:0.85rem;">Terjadi kesalahan: ${err.message}</p>`;
+            container.innerHTML = `
+                <div style="padding: 20px 10px; text-align: center; color: #ff453a; background: rgba(255, 69, 58, 0.05); border: 1px solid rgba(255, 69, 58, 0.15); border-radius: 8px;">
+                    <i data-lucide="alert-triangle" style="width: 24px; height: 24px; color: #ff453a; margin-bottom: 8px; display: inline-block; vertical-align: middle;"></i>
+                    <p style="font-size: 0.8rem; font-weight: 600; margin: 4px 0 0 0;">Gagal Memuat Daftar Grup</p>
+                    <span style="font-size: 0.72rem; color: var(--text-color-muted); display: block; margin-top: 4px; margin-bottom: 12px;">Pastikan WhatsApp bot telah terhubung.</span>
+                    <button class="btn btn-secondary" onclick="loadGroupsList()" style="padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer;">Coba Lagi</button>
+                </div>
+            `;
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         }
     }
 };
