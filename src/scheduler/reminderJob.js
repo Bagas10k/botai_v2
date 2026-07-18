@@ -11,6 +11,7 @@ const os = require('os');
 let lastSentReportDate = '';
 let lastSentBackupDate = '';
 const groupOpenStates = new Map();
+const lastSentGroupMessageDate = new Map();
 function resolveClient(clientOrGetClient) {
     if (typeof clientOrGetClient === 'function') {
         return clientOrGetClient();
@@ -236,6 +237,13 @@ async function checkGroupSchedules(clientOrGetClient, getStatus) {
             weekday: 'long'
         });
 
+        const dateStr = now.toLocaleDateString('en-US', {
+            timeZone: 'Asia/Jakarta',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+
         const dayMap = {
             'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7
         };
@@ -246,47 +254,73 @@ async function checkGroupSchedules(clientOrGetClient, getStatus) {
         
         for (const groupId of groupIds) {
             const cfg = gConfigs[groupId];
-            if (!cfg || !cfg.enabled || !cfg.autoCloseSchedule || !cfg.autoCloseSchedule.enabled) {
+            if (!cfg || !cfg.enabled) {
                 continue;
             }
 
-            const schedule = cfg.autoCloseSchedule;
-            const openTime = schedule.openTime;
-            const closeTime = schedule.closeTime;
-            const activeDays = schedule.activeDays || [];
+            // 1. AUTO OPEN/CLOSE SCHEDULE
+            if (cfg.autoCloseSchedule && cfg.autoCloseSchedule.enabled) {
+                const schedule = cfg.autoCloseSchedule;
+                const openTime = schedule.openTime;
+                const closeTime = schedule.closeTime;
+                const activeDays = schedule.activeDays || [];
 
-            let shouldBeOpen = true;
-            
-            if (activeDays.length > 0 && !activeDays.includes(currentDayVal)) {
-                shouldBeOpen = false;
-            } else {
-                if (openTime && closeTime) {
-                    if (timeStr < openTime || timeStr >= closeTime) {
-                        shouldBeOpen = false;
+                let shouldBeOpen = true;
+                
+                if (activeDays.length > 0 && !activeDays.includes(currentDayVal)) {
+                    shouldBeOpen = false;
+                } else {
+                    if (openTime && closeTime) {
+                        if (timeStr < openTime || timeStr >= closeTime) {
+                            shouldBeOpen = false;
+                        }
+                    }
+                }
+
+                const prevState = groupOpenStates.get(groupId);
+
+                if (prevState !== shouldBeOpen) {
+                    groupOpenStates.set(groupId, shouldBeOpen);
+                    
+                    if (prevState !== undefined) {
+                        try {
+                            await setMessagesAdminsOnlyHelper(client, groupId, !shouldBeOpen);
+                            
+                            const msgText = shouldBeOpen 
+                                ? "🔔 *Pemberitahuan Otomatis:* Jam operasional toko telah dimulai. Grup dibuka kembali untuk umum. Silakan ajukan pesanan Anda!"
+                                : "🔔 *Pemberitahuan Otomatis:* Jam operasional toko telah berakhir. Grup ditutup sementara. Hanya Admin yang dapat mengirim pesan.";
+                            
+                            await client.sendMessage(groupId, msgText);
+                            console.log(`[Scheduler] Status Grup ${cfg.group_name || groupId} diubah ke ${shouldBeOpen ? 'BUKA' : 'TUTUP'}.`);
+                        } catch (err) {
+                            console.error(`[Scheduler] Gagal mengubah setelan grup ${groupId}:`, err.message);
+                        }
+                    } else {
+                        console.log(`[Scheduler] Sinkronisasi awal status Grup ${cfg.group_name || groupId}: ${shouldBeOpen ? 'BUKA' : 'TUTUP'}.`);
                     }
                 }
             }
 
-            const prevState = groupOpenStates.get(groupId);
+            // 2. SCHEDULED GROUP MESSAGES
+            if (cfg.scheduledMessage && cfg.scheduledMessage.enabled) {
+                const sched = cfg.scheduledMessage;
+                const schedTime = sched.time; // e.g., "12:00"
+                const activeDays = sched.activeDays || [];
+                const messageText = sched.message;
 
-            if (prevState !== shouldBeOpen) {
-                groupOpenStates.set(groupId, shouldBeOpen);
-                
-                if (prevState !== undefined) {
-                    try {
-                        await setMessagesAdminsOnlyHelper(client, groupId, !shouldBeOpen);
-                        
-                        const msgText = shouldBeOpen 
-                            ? "🔔 *Pemberitahuan Otomatis:* Jam operasional toko telah dimulai. Grup dibuka kembali untuk umum. Silakan ajukan pesanan Anda!"
-                            : "🔔 *Pemberitahuan Otomatis:* Jam operasional toko telah berakhir. Grup ditutup sementara. Hanya Admin yang dapat mengirim pesan.";
-                        
-                        await client.sendMessage(groupId, msgText);
-                        console.log(`[Scheduler] Status Grup ${cfg.group_name || groupId} diubah ke ${shouldBeOpen ? 'BUKA' : 'TUTUP'}.`);
-                    } catch (err) {
-                        console.error(`[Scheduler] Gagal mengubah setelan grup ${groupId}:`, err.message);
+                if (schedTime && messageText && messageText.trim() !== '') {
+                    const key = `${groupId}_${schedTime}`;
+                    if (timeStr === schedTime && lastSentGroupMessageDate.get(key) !== dateStr) {
+                        if (activeDays.length === 0 || activeDays.includes(currentDayVal)) {
+                            lastSentGroupMessageDate.set(key, dateStr);
+                            try {
+                                console.log(`[Scheduler] Mengirim pesan terjadwal ke grup ${cfg.group_name || groupId}: "${messageText.substring(0, 30)}..."`);
+                                await client.sendMessage(groupId, messageText);
+                            } catch (err) {
+                                console.error(`[Scheduler] Gagal mengirim pesan terjadwal ke grup ${groupId}:`, err.message);
+                            }
+                        }
                     }
-                } else {
-                    console.log(`[Scheduler] Sinkronisasi awal status Grup ${cfg.group_name || groupId}: ${shouldBeOpen ? 'BUKA' : 'TUTUP'}.`);
                 }
             }
         }

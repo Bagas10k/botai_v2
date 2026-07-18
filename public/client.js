@@ -923,6 +923,21 @@ window.selectGroup = async function(groupId) {
         // Toggle schedule UI fields visibility
         toggleScheduleFields();
 
+        // Scheduled Message
+        const schedMsg = selectedGroupConfig.scheduledMessage || { enabled: false, time: '12:00', activeDays: [1,2,3,4,5,6,7], message: '' };
+        document.getElementById('grp-sched-msg-enable').checked = schedMsg.enabled;
+        document.getElementById('grp-sched-msg-time').value = schedMsg.time || '12:00';
+        document.getElementById('grp-sched-msg-content').value = schedMsg.message || '';
+        
+        // Sched active days checkboxes
+        const schedDays = schedMsg.activeDays || [1,2,3,4,5,6,7];
+        document.querySelectorAll('.grp-sched-msg-day-cb').forEach(cb => {
+            cb.checked = schedDays.includes(parseInt(cb.value, 10));
+        });
+        
+        // Toggle sched message UI fields visibility
+        toggleSchedMsgFields();
+
         // Extra Triggers
         renderExtraTriggersList(selectedGroupConfig.extraTriggers || []);
         
@@ -1339,6 +1354,18 @@ window.saveGroupConfiguration = async function() {
         closeTime: document.getElementById('grp-close-time').value,
         activeDays
     };
+
+    // Scheduled Message
+    const schedDays = [];
+    document.querySelectorAll('.grp-sched-msg-day-cb:checked').forEach(cb => {
+        schedDays.push(parseInt(cb.value, 10));
+    });
+    const scheduledMessage = {
+        enabled: document.getElementById('grp-sched-msg-enable').checked,
+        time: document.getElementById('grp-sched-msg-time').value,
+        message: document.getElementById('grp-sched-msg-content').value.trim(),
+        activeDays: schedDays
+    };
     
     // Extra Triggers
     const extraTriggers = [];
@@ -1378,6 +1405,7 @@ window.saveGroupConfiguration = async function() {
         welcomeMessage,
         goodbyeMessage,
         autoCloseSchedule,
+        scheduledMessage,
         extraTriggers,
         paymentType,
         paymentMedia,
@@ -1537,6 +1565,18 @@ window.applyCloneConfig = async function() {
 window.toggleScheduleFields = function() {
     const isEnabled = document.getElementById('grp-auto-close-enable').checked;
     const fields = document.getElementById('grp-schedule-fields');
+    if (fields) {
+        if (isEnabled) {
+            fields.classList.remove('hidden');
+        } else {
+            fields.classList.add('hidden');
+        }
+    }
+};
+
+window.toggleSchedMsgFields = function() {
+    const isEnabled = document.getElementById('grp-sched-msg-enable').checked;
+    const fields = document.getElementById('grp-sched-msg-fields');
     if (fields) {
         if (isEnabled) {
             fields.classList.remove('hidden');

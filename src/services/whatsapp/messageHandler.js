@@ -31,7 +31,6 @@ const {
     extractReceiptDetails
 } = require('../ocr/ocrService');
 
-const { sendToGoogleSheets, fetchSheetsSummary } = require('../sheets/sheetsService');
 const { 
     generateUnifiedAiResponse, 
     generateGroupAiResponse, 
