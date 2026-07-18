@@ -964,6 +964,29 @@ app.post('/api/host-admin/goodbye-message', async (req, res) => {
     }
 });
 
+app.post('/api/host-admin/group-scheduler', async (req, res) => {
+    try {
+        const { groupId, schedulerEnabled, openTime, closeTime } = req.body;
+        const { group_configs: gConfigs } = await getGroupConfigs();
+        const gCfg = gConfigs[groupId];
+        if (gCfg) {
+            gCfg.autoCloseSchedule = {
+                enabled: schedulerEnabled === true,
+                openTime: openTime || '08:00',
+                closeTime: closeTime || '17:00',
+                activeDays: (gCfg.autoCloseSchedule && gCfg.autoCloseSchedule.activeDays) || [1,2,3,4,5]
+            };
+            await saveGroupConfig(groupId, gCfg);
+            io.emit('group_config_updated', { groupId });
+            res.json({ success: true });
+        } else {
+            res.status(404).json({ error: 'Grup tidak ditemukan' });
+        }
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/host-admin/payment-settings', async (req, res) => {
     try {
         const { groupId, paymentType, paymentMedia, paymentText } = req.body;
