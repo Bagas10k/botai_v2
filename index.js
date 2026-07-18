@@ -845,9 +845,27 @@ app.post('/api/shop/broadcast', async (req, res) => {
                             if (window.Store && window.Store.GroupMetadata) {
                                 const metadata = await window.Store.GroupMetadata.find(chatId);
                                 if (metadata && metadata.participants) {
-                                    return metadata.participants.map(p => {
+                                    let arr = [];
+                                    const parts = metadata.participants;
+                                    if (Array.isArray(parts)) {
+                                        arr = parts;
+                                    } else if (typeof parts.toArray === 'function') {
+                                        arr = parts.toArray();
+                                    } else if (parts.models && Array.isArray(parts.models)) {
+                                        arr = parts.models;
+                                    } else if (typeof parts.serialize === 'function') {
+                                        arr = parts.serialize();
+                                    }
+
+                                    return arr.map(p => {
+                                        if (!p) return null;
                                         const id = p.id || p;
-                                        return typeof id === 'object' ? (id._serialized || id.toString()) : id;
+                                        if (id) {
+                                            if (typeof id === 'string') return id;
+                                            if (id._serialized) return id._serialized;
+                                            if (typeof id.toString === 'function') return id.toString();
+                                        }
+                                        return null;
                                     }).filter(Boolean);
                                 }
                             }
@@ -873,9 +891,27 @@ app.post('/api/shop/broadcast', async (req, res) => {
                                 if (window.Store && window.Store.Chat) {
                                     const chatInstance = window.Store.Chat.get(chatId);
                                     if (chatInstance && chatInstance.groupMetadata && chatInstance.groupMetadata.participants) {
-                                        return chatInstance.groupMetadata.participants.map(p => {
+                                        let arr = [];
+                                        const parts = chatInstance.groupMetadata.participants;
+                                        if (Array.isArray(parts)) {
+                                            arr = parts;
+                                        } else if (typeof parts.toArray === 'function') {
+                                            arr = parts.toArray();
+                                        } else if (parts.models && Array.isArray(parts.models)) {
+                                            arr = parts.models;
+                                        } else if (typeof parts.serialize === 'function') {
+                                            arr = parts.serialize();
+                                        }
+
+                                        return arr.map(p => {
+                                            if (!p) return null;
                                             const id = p.id || p;
-                                            return typeof id === 'object' ? (id._serialized || id.toString()) : id;
+                                            if (id) {
+                                                if (typeof id === 'string') return id;
+                                                if (id._serialized) return id._serialized;
+                                                if (typeof id.toString === 'function') return id.toString();
+                                            }
+                                            return null;
                                         }).filter(Boolean);
                                     }
                                 }
