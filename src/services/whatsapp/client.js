@@ -336,6 +336,35 @@ function createNewClient(io) {
         authStrategy: new LocalAuth({ dataPath: sessionPath }),
         puppeteer: puppeteerOptions
     });
+
+    // Override sendMessage to inject lazy loading/anti-ban delay (1s read, 3s writing)
+    const originalSendMessage = client.sendMessage.bind(client);
+    client.sendMessage = async function(chatId, content, options) {
+        try {
+            const chat = await client.getChatById(chatId);
+            // 1. Fase Read (1 detik)
+            try {
+                await chat.sendSeen();
+            } catch (_) {}
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // 2. Fase Writing / Typing (3 detik)
+            try {
+                await chat.sendStateTyping();
+            } catch (_) {}
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // Hentikan typing state
+            try {
+                await chat.clearState();
+            } catch (_) {}
+        } catch (err) {
+            console.warn('[Anti-Ban Delay Warning] Gagal simulasi read/typing:', err.message);
+        }
+
+        // 3. Kirim pesan asli
+        return await originalSendMessage(chatId, content, options);
+    };
     
     initMessageHandler(client, io);
     attachClientListeners();
