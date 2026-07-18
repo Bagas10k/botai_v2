@@ -41,7 +41,7 @@ const {
 
 const FITUR_KEUANGAN = false;
 
-const { setMessagesAdminsOnlyHelper } = require('./client');
+const setMessagesAdminsOnlyHelper = (...args) => require('./client').setMessagesAdminsOnlyHelper(...args);
 
 let clientInstance = null;
 let ioInstance = null;
