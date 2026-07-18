@@ -577,7 +577,31 @@
                 <!-- PANEL: Broadcast Massal -->
                 <section class="panel card" style="padding: 15px; display: flex; flex-direction: column; gap: 10px;">
                     <h2 style="margin: 0; font-size: 1.1rem;"><i data-lucide="megaphone"></i> Siaran Massal (Broadcast)</h2>
-                    <p class="card-subtitle" style="margin-top: -5px; font-size: 0.8rem;">Kirim pengumuman/promo ke seluruh grup aktif.</p>
+                    <p class="card-subtitle" style="margin-top: -5px; font-size: 0.8rem;">Kirim pengumuman/promo secara massal ke grup atau kontak kustom.</p>
+                    
+                    <!-- Pilihan Target Broadcast -->
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="broadcast-target-type" style="font-size: 0.75rem;">Target Penerima</label>
+                        <select id="broadcast-target-type" class="form-control" style="width: 100%; padding: 6px; font-size: 0.85rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);" onchange="window.onBroadcastTargetTypeChange(this.value)">
+                            <option value="groups">Seluruh Grup Aktif</option>
+                            <option value="custom_numbers">Daftar Nomor HP Kustom (Kirim PM)</option>
+                            <option value="group_members">Seluruh Anggota dari Grup Tertentu (Kirim PM)</option>
+                        </select>
+                    </div>
+
+                    <!-- Input List Nomor Kustom (Hidden by default) -->
+                    <div id="broadcast-custom-numbers-group" class="form-group hidden" style="margin-bottom: 0;">
+                        <label for="broadcast-custom-numbers" style="font-size: 0.75rem;">Daftar Nomor HP (Pisahkan dengan koma atau baris baru)</label>
+                        <textarea id="broadcast-custom-numbers" rows="3" placeholder="Contoh:&#10;628123456789&#10;628998877665" class="form-control" style="width: 100%; padding: 8px; font-size: 0.85rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); resize: vertical;"></textarea>
+                    </div>
+
+                    <!-- Pilihan Grup Tertentu (Hidden by default) -->
+                    <div id="broadcast-group-members-group" class="form-group hidden" style="margin-bottom: 0;">
+                        <label for="broadcast-target-group" style="font-size: 0.75rem;">Pilih Grup Asal Anggota</label>
+                        <select id="broadcast-target-group" class="form-control" style="width: 100%; padding: 6px; font-size: 0.85rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                            <!-- Akan diisi otomatis dari JS -->
+                        </select>
+                    </div>
                     
                     <div class="form-group" style="margin-bottom: 0;">
                         <label for="broadcast-msg" style="font-size: 0.75rem;">Pesan Siaran</label>
@@ -587,6 +611,12 @@
                     <div class="form-group" style="margin-bottom: 0;">
                         <label for="broadcast-media" style="font-size: 0.75rem;">File Media Pendukung (Opsional)</label>
                         <input type="text" id="broadcast-media" placeholder="Contoh: brosur.pdf / promo.jpg" class="form-control" style="width: 100%; padding: 6px; font-size: 0.85rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                    </div>
+
+                    <!-- Delay Anti-Ban -->
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="broadcast-delay" style="font-size: 0.75rem;">Jeda Waktu Kirim (Detik per Pesan - Mencegah Banned)</label>
+                        <input type="number" id="broadcast-delay" value="5" min="1" max="60" class="form-control" style="width: 100%; padding: 6px; font-size: 0.85rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
                     </div>
                     
                     <button class="btn btn-primary" onclick="sendBroadcast()" style="width: 100%; padding: 8px; font-size: 0.85rem; margin-top: 5px;">

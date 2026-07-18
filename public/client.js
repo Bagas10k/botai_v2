@@ -771,6 +771,9 @@ window.loadGroupsList = async function() {
         // Update select dropdown untuk modal salin konfig
         updateCloneSourceDropdown();
         updatePrivateChatSyncDropdown();
+        if (typeof updateBroadcastGroupDropdown === 'function') {
+            updateBroadcastGroupDropdown();
+        }
     } catch (err) {
         console.error('Error loadGroupsList:', err);
         const container = document.getElementById('groups-list-container');
@@ -2052,33 +2055,80 @@ window.closeShopChatModal = function() {
     document.getElementById('shop-chat-modal').classList.add('hidden');
 };
 
-// Broadcast
+// Target type selection changer
+window.onBroadcastTargetTypeChange = function(val) {
+    const customGrp = document.getElementById('broadcast-custom-numbers-group');
+    const membersGrp = document.getElementById('broadcast-group-members-group');
+    
+    if (customGrp) customGrp.classList.toggle('hidden', val !== 'custom_numbers');
+    if (membersGrp) membersGrp.classList.toggle('hidden', val !== 'group_members');
+};
+
+// Dropdown groups list populator
+window.updateBroadcastGroupDropdown = function() {
+    const select = document.getElementById('broadcast-target-group');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">-- Pilih Grup Asal Anggota --</option>';
+    if (activeGroups && activeGroups.length > 0) {
+        activeGroups.forEach(g => {
+            const option = document.createElement('option');
+            option.value = g.id;
+            option.textContent = g.name;
+            select.appendChild(option);
+        });
+    }
+};
+
+// Advanced Broadcast
 window.sendBroadcast = async function() {
+    const targetType = document.getElementById('broadcast-target-type').value;
+    const customNumbersVal = document.getElementById('broadcast-custom-numbers').value.trim();
+    const targetGroup = document.getElementById('broadcast-target-group').value;
     const msgInput = document.getElementById('broadcast-msg');
     const mediaInput = document.getElementById('broadcast-media');
+    const delayInput = document.getElementById('broadcast-delay');
     
     const message = msgInput.value.trim();
     const media = mediaInput.value.trim();
+    const delay = parseInt(delayInput.value, 10) || 5;
     
     if (!message) {
         alert('Tulis pesan broadcast terlebih dahulu!');
         return;
     }
     
-    if (!confirm('Apakah Anda yakin ingin mengirim pesan siaran ini ke SELURUH grup WhatsApp aktif?')) return;
+    let confirmMsg = 'Apakah Anda yakin ingin mengirim pesan siaran ini?';
+    if (targetType === 'groups') {
+        confirmMsg = 'Apakah Anda yakin ingin mengirim pesan siaran ini ke SELURUH grup WhatsApp aktif?';
+    } else if (targetType === 'custom_numbers') {
+        confirmMsg = 'Apakah Anda yakin ingin mengirim pesan siaran ini (PM) ke daftar nomor kustom?';
+    } else if (targetType === 'group_members') {
+        confirmMsg = 'Apakah Anda yakin ingin mengirim pesan siaran ini (PM) ke seluruh anggota dari grup terpilih?';
+    }
+    
+    if (!confirm(confirmMsg)) return;
     
     try {
         const res = await fetch('/api/shop/broadcast', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, media })
+            body: JSON.stringify({ 
+                targetType, 
+                customNumbers: customNumbersVal, 
+                targetGroup, 
+                message, 
+                media, 
+                delay 
+            })
         });
         
         if (res.ok) {
             const result = await res.json();
-            alert(`Siaran massal berhasil dikirim ke ${result.count} dari total ${result.total} grup aktif!`);
+            alert(`Siaran massal berhasil diproses! Terkirim ke: ${result.count} tujuan.`);
             msgInput.value = '';
             mediaInput.value = '';
+            document.getElementById('broadcast-custom-numbers').value = '';
         } else {
             throw new Error(await res.text());
         }

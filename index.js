@@ -804,27 +804,125 @@ app.post('/api/shop/customers', async (req, res) => {
 
 app.post('/api/shop/broadcast', async (req, res) => {
     try {
-        const { message, targetGroupIds } = req.body;
-        if (!message || !targetGroupIds || targetGroupIds.length === 0) {
-            return res.status(400).json({ error: 'Pesan dan grup tujuan wajib diisi.' });
+        const { targetType, customNumbers, targetGroup, message, media, delay } = req.body;
+        
+        if (!message) {
+            return res.status(400).json({ error: 'Pesan broadcast wajib diisi.' });
         }
+        
         const client = getClient();
         if (!client || getStatus() !== 'CONNECTED') {
             return res.status(500).json({ error: 'WhatsApp client tidak terhubung.' });
         }
         
-        let success = 0;
-        for (const gid of targetGroupIds) {
+        // 1. Tentukan daftar target JID
+        let targetIds = [];
+        
+        if (targetType === 'groups') {
+            const { group_configs: gConfigs } = await getGroupConfigs();
+            targetIds = Object.keys(gConfigs).filter(gid => gConfigs[gid].enabled);
+        } else if (targetType === 'custom_numbers') {
+            if (!customNumbers) {
+                return res.status(400).json({ error: 'Nomor HP kustom wajib diisi.' });
+            }
+            targetIds = customNumbers
+                .split(/[\n,]+/)
+                .map(num => num.trim().replace(/\D/g, ''))
+                .filter(num => num.length > 5)
+                .map(num => `${num}@c.us`);
+        } else if (targetType === 'group_members') {
+            if (!targetGroup) {
+                return res.status(400).json({ error: 'Grup asal anggota wajib dipilih.' });
+            }
             try {
-                await client.sendMessage(gid, message);
-                success++;
-            } catch(e) {
-                console.error(`Gagal mengirim BC ke ${gid}:`, e.message);
+                const chat = await client.getChatById(targetGroup);
+                if (chat && chat.participants) {
+                    targetIds = chat.participants.map(p => p.id._serialized);
+                } else {
+                    return res.status(400).json({ error: 'Grup tidak ditemukan atau tidak memiliki anggota.' });
+                }
+            } catch (chatErr) {
+                return res.status(400).json({ error: 'Gagal mengambil anggota grup: ' + chatErr.message });
+            }
+        } else {
+            // Fallback backward compatibility
+            const { targetGroupIds } = req.body;
+            targetIds = targetGroupIds || [];
+        }
+        
+        // Hapus duplikasi jika ada
+        targetIds = [...new Set(targetIds)];
+        
+        if (targetIds.length === 0) {
+            return res.status(400).json({ error: 'Tidak ditemukan target penerima siaran.' });
+        }
+        
+        // 2. Load media if specified
+        let messageMedia = null;
+        if (media) {
+            try {
+                if (media.startsWith('http://') || media.startsWith('https://')) {
+                    const { MessageMedia } = require('whatsapp-web.js');
+                    messageMedia = await MessageMedia.fromUrl(media);
+                } else {
+                    const path = require('path');
+                    const filePath = path.join('./media', media);
+                    if (fs.existsSync(filePath)) {
+                        const { MessageMedia } = require('whatsapp-web.js');
+                        messageMedia = MessageMedia.fromFilePath(filePath);
+                    } else {
+                        return res.status(400).json({ error: `File media '${media}' tidak ditemukan di folder ./media` });
+                    }
+                }
+            } catch (mediaErr) {
+                return res.status(400).json({ error: 'Gagal memuat file media: ' + mediaErr.message });
             }
         }
-        res.json({ success: true, count: success });
+        
+        // 3. Jalankan broadcast di background (non-blocking) agar HTTP request tidak timeout
+        const delayMs = (parseInt(delay, 10) || 5) * 1000;
+        
+        res.json({ success: true, count: targetIds.length, message: 'Broadcast dimulai di latar belakang.' });
+        
+        // Background Process
+        (async () => {
+            console.log(`[Broadcast] Memulai pengiriman ke ${targetIds.length} tujuan dengan jeda ${delay} detik...`);
+            let countSuccess = 0;
+            
+            for (let i = 0; i < targetIds.length; i++) {
+                const jid = targetIds[i];
+                try {
+                    // Cek koneksi di tengah jalan
+                    if (getStatus() !== 'CONNECTED') {
+                        console.log('[Broadcast Aborted] WhatsApp terputus saat proses broadcast sedang berjalan.');
+                        break;
+                    }
+                    
+                    if (messageMedia) {
+                        // Kirim media dengan caption pesan
+                        await client.sendMessage(jid, messageMedia, { caption: message });
+                    } else {
+                        await client.sendMessage(jid, message);
+                    }
+                    countSuccess++;
+                    console.log(`[Broadcast Progress] Berhasil mengirim ke ${jid} (${i+1}/${targetIds.length})`);
+                } catch (sendErr) {
+                    console.error(`[Broadcast Error] Gagal mengirim ke ${jid}:`, sendErr.message);
+                }
+                
+                // Jeda waktu antar pesan (delay anti-ban) kecuali untuk pesan terakhir
+                if (i < targetIds.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, delayMs));
+                }
+            }
+            console.log(`[Broadcast Completed] Berhasil mengirim ke ${countSuccess} dari ${targetIds.length} target.`);
+        })();
+        
     } catch(err) {
-        res.status(500).json({ error: err.message });
+        console.error('Gagal memproses broadcast:', err.message);
+        if (!res.headersSent) {
+            res.status(500).json({ error: err.message });
+        }
     }
 });
 
