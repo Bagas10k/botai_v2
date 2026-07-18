@@ -838,35 +838,42 @@ app.post('/api/shop/broadcast', async (req, res) => {
                 console.log(`[Broadcast] Mengambil anggota grup untuk ${targetGroup}...`);
                 let resolvedParticipants = [];
 
-                // Strategi 1: Direct GroupMetadata find (paling cepat & aman untuk grup besar)
+                // Strategi 1: Direct WAWebGroupQueryJob & WAWebCollections Chat (Terkuat & Akurat)
                 try {
                     const strategy1 = await client.pupPage.evaluate(async (chatId) => {
                         try {
-                            if (window.Store && window.Store.GroupMetadata) {
-                                const metadata = await window.Store.GroupMetadata.find(chatId);
-                                if (metadata && metadata.participants) {
-                                    let arr = [];
-                                    const parts = metadata.participants;
-                                    if (Array.isArray(parts)) {
-                                        arr = parts;
-                                    } else if (typeof parts.toArray === 'function') {
-                                        arr = parts.toArray();
-                                    } else if (parts.models && Array.isArray(parts.models)) {
-                                        arr = parts.models;
-                                    } else if (typeof parts.serialize === 'function') {
-                                        arr = parts.serialize();
-                                    }
+                            // 1. Paksa query dan update metadata grup dari WhatsApp server
+                            try {
+                                const WAWebGroupQueryJob = window.require('WAWebGroupQueryJob');
+                                if (WAWebGroupQueryJob && WAWebGroupQueryJob.queryAndUpdateGroupMetadataById) {
+                                    await WAWebGroupQueryJob.queryAndUpdateGroupMetadataById({ id: chatId });
+                                }
+                            } catch (errQuery) {
+                                // ignore
+                            }
 
-                                    return arr.map(p => {
-                                        if (!p) return null;
-                                        const id = p.id || p;
-                                        if (id) {
-                                            if (typeof id === 'string') return id;
-                                            if (id._serialized) return id._serialized;
-                                            if (typeof id.toString === 'function') return id.toString();
-                                        }
-                                        return null;
-                                    }).filter(Boolean);
+                            // 2. Ambil chatInstance dan serialize peserta
+                            const ChatCollection = window.require('WAWebCollections').Chat;
+                            const WidFactory = window.require('WAWebWidFactory');
+                            if (ChatCollection && WidFactory) {
+                                const groupWid = WidFactory.createWid(chatId);
+                                const chat = ChatCollection.get(groupWid) || await ChatCollection.find(groupWid);
+                                if (chat && chat.groupMetadata && chat.groupMetadata.participants) {
+                                    const parts = typeof chat.groupMetadata.participants.serialize === 'function'
+                                        ? chat.groupMetadata.participants.serialize()
+                                        : chat.groupMetadata.participants;
+                                    if (Array.isArray(parts)) {
+                                        return parts.map(p => {
+                                            if (!p) return null;
+                                            const idObj = p.id || p;
+                                            if (idObj) {
+                                                if (typeof idObj === 'string') return idObj;
+                                                if (idObj._serialized) return idObj._serialized;
+                                                if (typeof idObj.toString === 'function') return idObj.toString();
+                                            }
+                                            return null;
+                                        }).filter(Boolean);
+                                    }
                                 }
                             }
                         } catch (e) {
@@ -877,22 +884,22 @@ app.post('/api/shop/broadcast', async (req, res) => {
                     
                     if (strategy1 && strategy1.length > 0) {
                         resolvedParticipants = strategy1;
-                        console.log(`[Broadcast] Strategi 1 (GroupMetadata) Sukses: ${resolvedParticipants.length} anggota ditemukan.`);
+                        console.log(`[Broadcast] Strategi 1 (WAWebCollections) Sukses: ${resolvedParticipants.length} anggota ditemukan.`);
                     }
                 } catch (s1Err) {
                     console.warn('[Broadcast Warning] Strategi 1 Error:', s1Err.message);
                 }
 
-                // Strategi 2: Direct Chat Store get
+                // Strategi 2: Direct GroupMetadata find (Fallback browser level)
                 if (resolvedParticipants.length === 0) {
                     try {
-                        const strategy2 = await client.pupPage.evaluate((chatId) => {
+                        const strategy2 = await client.pupPage.evaluate(async (chatId) => {
                             try {
-                                if (window.Store && window.Store.Chat) {
-                                    const chatInstance = window.Store.Chat.get(chatId);
-                                    if (chatInstance && chatInstance.groupMetadata && chatInstance.groupMetadata.participants) {
+                                if (window.Store && window.Store.GroupMetadata) {
+                                    const metadata = await window.Store.GroupMetadata.find(chatId);
+                                    if (metadata && metadata.participants) {
                                         let arr = [];
-                                        const parts = chatInstance.groupMetadata.participants;
+                                        const parts = metadata.participants;
                                         if (Array.isArray(parts)) {
                                             arr = parts;
                                         } else if (typeof parts.toArray === 'function') {
@@ -923,7 +930,7 @@ app.post('/api/shop/broadcast', async (req, res) => {
 
                         if (strategy2 && strategy2.length > 0) {
                             resolvedParticipants = strategy2;
-                            console.log(`[Broadcast] Strategi 2 (Chat Store get) Sukses: ${resolvedParticipants.length} anggota ditemukan.`);
+                            console.log(`[Broadcast] Strategi 2 (GroupMetadata find) Sukses: ${resolvedParticipants.length} anggota ditemukan.`);
                         }
                     } catch (s2Err) {
                         console.warn('[Broadcast Warning] Strategi 2 Error:', s2Err.message);
