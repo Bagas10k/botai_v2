@@ -98,6 +98,7 @@ window.switchTab = function(tabId) {
     } else if (tabId === 'shop') {
         loadHostAdmins();
         loadCustomersList();
+        loadGroupsList();
     } else if (tabId === 'transactions') {
         loadOrders();
         loadInvoices();
