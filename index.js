@@ -828,7 +828,15 @@ app.post('/api/shop/broadcast', async (req, res) => {
             }
             targetIds = customNumbers
                 .split(/[\n,]+/)
-                .map(num => num.trim().replace(/\D/g, ''))
+                .map(num => {
+                    let cleaned = num.trim().replace(/\D/g, '');
+                    if (cleaned.startsWith('0')) {
+                        cleaned = '62' + cleaned.substring(1);
+                    } else if (cleaned.startsWith('8') && cleaned.length >= 9 && cleaned.length <= 13) {
+                        cleaned = '62' + cleaned;
+                    }
+                    return cleaned;
+                })
                 .filter(num => num.length > 5)
                 .map(num => `${num}@c.us`);
         } else if (targetType === 'group_members') {
@@ -979,6 +987,12 @@ app.post('/api/shop/broadcast', async (req, res) => {
             targetIds = targetGroupIds || [];
         }
         
+        // Filter out bot's own JID to avoid broadcasting to self
+        const botJid = client.info && client.info.wid ? client.info.wid._serialized : null;
+        if (botJid) {
+            targetIds = targetIds.filter(jid => jid !== botJid);
+        }
+        
         // Hapus duplikasi jika ada
         targetIds = [...new Set(targetIds)];
         
@@ -995,7 +1009,7 @@ app.post('/api/shop/broadcast', async (req, res) => {
                     messageMedia = await MessageMedia.fromUrl(media);
                 } else {
                     const path = require('path');
-                    const filePath = path.join('./media', media);
+                    const filePath = path.join(__dirname, 'media', media);
                     if (fs.existsSync(filePath)) {
                         const { MessageMedia } = require('whatsapp-web.js');
                         messageMedia = MessageMedia.fromFilePath(filePath);
