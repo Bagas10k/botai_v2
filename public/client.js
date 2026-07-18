@@ -21,17 +21,15 @@ const configForm = document.getElementById('config-form');
 const cfgProvider = document.getElementById('cfg-provider');
 const cfgGeminiApiKeys = document.getElementById('cfg-gemini-api-keys');
 const cfgGeminiModel = document.getElementById('cfg-gemini-model');
+
 const cfgApiUrl = document.getElementById('cfg-api-url');
 const cfgModelName = document.getElementById('cfg-model-name');
 const cfgMaxTokens = document.getElementById('cfg-max-tokens');
 const cfgApiKey = document.getElementById('cfg-api-key');
-const cfgSheetsUrl = document.getElementById('cfg-sheets-url');
 const cfgBossNumber = document.getElementById('cfg-boss-number');
 const cfgReportTime = document.getElementById('cfg-report-time');
 const cfgSystemPrompt = document.getElementById('cfg-system-prompt');
 const cfgAiMemory = document.getElementById('cfg-ai-memory');
-
-// History Log Elements
 const historyFinanceList = document.getElementById('history-finance-list');
 const historyAgendaList = document.getElementById('history-agenda-list');
 
@@ -99,7 +97,7 @@ window.switchTab = function(tabId) {
     if (selectedBtn) selectedBtn.classList.add('active');
     
     // Specific triggers
-    if (tabId === 'groups') {
+    if (tabId === 'groups' || tabId === 'broadcast') {
         loadGroupsList();
     } else if (tabId === 'shop') {
         loadHostAdmins();
@@ -142,6 +140,57 @@ socket.on('memory_updated', (data) => {
         cfgAiMemory.value = data.content;
     }
     loadFiles();
+});
+
+socket.on('broadcast_progress', (data) => {
+    const container = document.getElementById('broadcast-progress-container');
+    const placeholder = document.getElementById('broadcast-progress-placeholder');
+    const statusBar = document.getElementById('broadcast-progress-bar');
+    const statusText = document.getElementById('broadcast-progress-status');
+    const percentText = document.getElementById('broadcast-progress-percent');
+    const statTotal = document.getElementById('broadcast-stat-total');
+    const statSuccess = document.getElementById('broadcast-stat-success');
+    const statFail = document.getElementById('broadcast-stat-fail');
+    const terminal = document.getElementById('broadcast-terminal');
+    
+    if (container && placeholder) {
+        container.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+    }
+    
+    const pct = Math.round((data.current / data.total) * 100) || 0;
+    if (statusBar) statusBar.style.width = `${pct}%`;
+    if (percentText) percentText.innerText = `${pct}%`;
+    if (statTotal) statTotal.innerText = data.total;
+    if (statSuccess) statSuccess.innerText = data.successCount;
+    if (statFail) statFail.innerText = data.failCount;
+    
+    if (statusText) {
+        if (data.status === 'RUNNING') {
+            statusText.innerText = 'Sedang Mengirim...';
+            statusText.style.color = '#3b82f6';
+        } else if (data.status === 'COMPLETED') {
+            statusText.innerText = '✓ Selesai';
+            statusText.style.color = '#10b981';
+        } else if (data.status === 'CANCELLED') {
+            statusText.innerText = '✕ Dihentikan';
+            statusText.style.color = '#ef4444';
+        }
+    }
+    
+    if (terminal && data.lastJid) {
+        const time = new Date().toLocaleTimeString('id-ID');
+        const formattedJid = data.lastJid.replace('@c.us', '');
+        const symbol = data.lastStatus === 'SUCCESS' ? '✅' : '❌';
+        const msgStr = `[${time}] Kirim ke ${formattedJid} ... ${data.lastStatus === 'SUCCESS' ? 'SUKSES' : 'GAGAL'} ${symbol}\n`;
+        terminal.innerText += msgStr;
+        terminal.scrollTop = terminal.scrollHeight;
+    }
+    
+    if (data.status === 'CANCELLED' && terminal) {
+        terminal.innerText += `[System] Broadcast dibatalkan/dihentikan oleh admin.\n`;
+        terminal.scrollTop = terminal.scrollHeight;
+    }
 });
 
 socket.on('group_config_updated', (data) => {
@@ -465,9 +514,8 @@ async function loadConfig() {
         document.getElementById('cfg-openrouter-model').value = config.openrouter_model || 'meta-llama/llama-3.3-70b-instruct';
         
         cfgMaxTokens.value = config.max_tokens || 1000;
-        cfgSheetsUrl.value = config.google_sheets_url || '';
-        
         window.currentPrivateChatSyncGroupId = config.private_chat_sync_group_id || '';
+
         const syncSelect = document.getElementById('cfg-private-chat-sync-group-id');
         if (syncSelect) {
             syncSelect.value = window.currentPrivateChatSyncGroupId;
@@ -550,7 +598,6 @@ function setupConfigHandler() {
             api_key: (cfgApiKey.value.trim() && !cfgApiKey.value.includes('YOUR_LOCAL') && !cfgApiKey.value.includes('TOKEN')) ? cfgApiKey.value.trim() : (config && config.api_key && !config.api_key.includes('YOUR_LOCAL') ? config.api_key : ''),
             model_name: activeModel,
             max_tokens: parseInt(cfgMaxTokens.value, 10),
-            google_sheets_url: cfgSheetsUrl.value.trim(),
             boss_number: cfgBossNumber.value.trim(),
             report_time: cfgReportTime.value.trim(),
             system_prompt_template: cfgSystemPrompt.value.trim(),
@@ -2212,6 +2259,7 @@ window.updateBroadcastGroupDropdown = function() {
 };
 
 // Advanced Broadcast
+// Advanced Broadcast
 window.sendBroadcast = async function() {
     const targetType = document.getElementById('broadcast-target-type').value;
     const customNumbersVal = document.getElementById('broadcast-custom-numbers').value.trim();
@@ -2256,7 +2304,20 @@ window.sendBroadcast = async function() {
         
         if (res.ok) {
             const result = await res.json();
-            alert(`Siaran massal berhasil diproses! Terkirim ke: ${result.count} tujuan.`);
+            
+            const terminal = document.getElementById('broadcast-terminal');
+            if (terminal) {
+                terminal.innerText = `[System] Mulai mengirim siaran massal ke ${result.count} tujuan...\n`;
+            }
+            
+            const container = document.getElementById('broadcast-progress-container');
+            const placeholder = document.getElementById('broadcast-progress-placeholder');
+            if (container && placeholder) {
+                container.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            }
+            
+            alert(`Siaran massal berhasil diproses! Memulai pengiriman ke ${result.count} tujuan.`);
             msgInput.value = '';
             mediaInput.value = '';
             document.getElementById('broadcast-custom-numbers').value = '';
@@ -2265,6 +2326,21 @@ window.sendBroadcast = async function() {
         }
     } catch (err) {
         alert('Gagal mengirim siaran massal: ' + err.message);
+    }
+};
+
+window.stopBroadcast = async function() {
+    if (!confirm('Apakah Anda yakin ingin menghentikan pengiriman siaran massal yang sedang berjalan?')) return;
+    try {
+        const res = await fetch('/api/shop/broadcast/stop', { method: 'POST' });
+        if (res.ok) {
+            const result = await res.json();
+            alert(result.message || 'Siaran dihentikan.');
+        } else {
+            throw new Error(await res.text());
+        }
+    } catch (err) {
+        alert('Gagal menghentikan siaran: ' + err.message);
     }
 };
 
@@ -3244,18 +3320,18 @@ socket.on('order_created', (newOrder) => {
     }, 4000);
 
     const activeTab = document.querySelector('.ios-tab-btn.active');
-    if (activeTab && activeTab.id === 'btn-tab-transactions') {
+    if (activeTab && activeTab.id === 'btn-tab-shop') {
         loadOrders();
     } else {
-        const btnTransactions = document.getElementById('btn-tab-transactions');
-        if (btnTransactions) {
-            btnTransactions.style.position = 'relative';
+        const btnShop = document.getElementById('btn-tab-shop');
+        if (btnShop) {
+            btnShop.style.position = 'relative';
             let dot = document.getElementById('transaction-badge-dot');
             if (!dot) {
                 dot = document.createElement('span');
                 dot.id = 'transaction-badge-dot';
-                dot.style = 'position: absolute; top: 6px; right: 28px; width: 8px; height: 8px; background: #ff453a; border-radius: 50%;';
-                btnTransactions.appendChild(dot);
+                dot.style = 'position: absolute; top: 6px; right: 12px; width: 8px; height: 8px; background: #ff453a; border-radius: 50%;';
+                btnShop.appendChild(dot);
             }
         }
     }
@@ -3440,18 +3516,18 @@ socket.on('invoice_created', (newInv) => {
     }, 4000);
 
     const activeTab = document.querySelector('.ios-tab-btn.active');
-    if (activeTab && activeTab.id === 'btn-tab-transactions') {
+    if (activeTab && activeTab.id === 'btn-tab-shop') {
         loadInvoices();
     } else {
-        const btnTransactions = document.getElementById('btn-tab-transactions');
-        if (btnTransactions) {
-            btnTransactions.style.position = 'relative';
+        const btnShop = document.getElementById('btn-tab-shop');
+        if (btnShop) {
+            btnShop.style.position = 'relative';
             let dot = document.getElementById('transaction-badge-dot');
             if (!dot) {
                 dot = document.createElement('span');
                 dot.id = 'transaction-badge-dot';
-                dot.style = 'position: absolute; top: 6px; right: 28px; width: 8px; height: 8px; background: #ff9f0a; border-radius: 50%;';
-                btnTransactions.appendChild(dot);
+                dot.style = 'position: absolute; top: 6px; right: 12px; width: 8px; height: 8px; background: #ff9f0a; border-radius: 50%;';
+                btnShop.appendChild(dot);
             }
         }
     }

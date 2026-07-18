@@ -12,3 +12,4 @@ scratch/
 *.bak
 *.sqlite
 knowledge/secret_*
+*.backup.js

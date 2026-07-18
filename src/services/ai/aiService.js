@@ -1,8 +1,10 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { config, getGeminiKey, rotateGeminiKey } = require('../../config/config');
 const { getChatSession, saveChatSession, getLogHistory } = require('../../db/models');
+const { getDb } = require('../../db/sqlite');
 
 let currentGroqKeyIndex = 0;
 let ioInstance = null;
@@ -11,6 +13,83 @@ const KNOWLEDGE_DIR = path.join(__dirname, '../../../knowledge');
 
 function setSocketIo(io) {
     ioInstance = io;
+}
+
+const CACHE_MIN_CHAR_LENGTH = 130000;
+
+async function getOrCreateContextCache(systemPrompt, apiKey) {
+    if (!systemPrompt || systemPrompt.length < CACHE_MIN_CHAR_LENGTH) {
+        return null;
+    }
+
+    const md5 = crypto.createHash('md5').update(systemPrompt).digest('hex');
+    const keyHash = crypto.createHash('md5').update(apiKey).digest('hex').substring(0, 8);
+    const dbKey = `gemini_cache_${keyHash}`;
+
+    const db = getDb();
+    if (db) {
+        try {
+            const row = await db.get("SELECT value FROM key_value_store WHERE key = ?", dbKey);
+            if (row && row.value) {
+                const cacheData = JSON.parse(row.value);
+                if (cacheData.md5 === md5 && cacheData.expireTime) {
+                    const expireDate = new Date(cacheData.expireTime);
+                    if (expireDate.getTime() > Date.now() + 60000) {
+                        console.log(`[Gemini Cache] Menggunakan Cache Context yang sudah ada: ${cacheData.cacheName}`);
+                        return cacheData.cacheName;
+                    }
+                }
+            }
+        } catch (dbErr) {
+            console.error('[Gemini Cache DB Error]:', dbErr.message);
+        }
+    }
+
+    const model = config.model_name && config.model_name.startsWith('gemini') 
+        ? config.model_name 
+        : 'gemini-2.5-flash';
+    const cleanModel = model.startsWith('models/') ? model : `models/${model}`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/cachedContents?key=${apiKey}`;
+    const payload = {
+        model: cleanModel,
+        displayName: 'jajan_digital_context',
+        ttl: '3600s',
+        contents: [
+            {
+                role: 'user',
+                parts: [{ text: systemPrompt }]
+            }
+        ]
+    };
+
+    try {
+        console.log(`[Gemini Cache] Membuat cache baru untuk system prompt (${systemPrompt.length} karakter)...`);
+        const response = await axios.post(url, payload, {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 60000
+        });
+
+        if (response.data && response.data.name) {
+            const cacheName = response.data.name;
+            const expireTime = response.data.expireTime || new Date(Date.now() + 3600 * 1000).toISOString();
+            
+            const cacheData = { cacheName, md5, expireTime };
+            if (db) {
+                await db.run("INSERT OR REPLACE INTO key_value_store (key, value) VALUES (?, ?)", dbKey, JSON.stringify(cacheData));
+            }
+            console.log(`[Gemini Cache] Berhasil membuat cache baru: ${cacheName}. Expire pada: ${expireTime}`);
+            return cacheName;
+        }
+    } catch (err) {
+        let errDetail = err.message;
+        if (err.response && err.response.data && err.response.data.error) {
+            errDetail = err.response.data.error.message;
+        }
+        console.warn(`[Gemini Cache Warning] Gagal membuat context cache (${errDetail}). Bot akan otomatis menggunakan request standar.`);
+    }
+
+    return null;
 }
 
 // Call Gemini API using a specific key
@@ -29,9 +108,14 @@ async function callGemini(systemPrompt, chatHistory, isJson = false, apiKey) {
         };
     });
     
+    // Cek ketersediaan/pembuatan Cache Context
+    const cacheName = await getOrCreateContextCache(systemPrompt, apiKey);
+    
     const payload = { contents };
     
-    if (systemPrompt) {
+    if (cacheName) {
+        payload.cachedContent = cacheName;
+    } else if (systemPrompt) {
         payload.systemInstruction = {
             parts: [{ text: systemPrompt }]
         };
