@@ -133,6 +133,11 @@
          TAB 2 — MEMORY
     ══════════════════════════════════════════ -->
     <div id="tab-memory" class="tab-content hidden">
+        <div class="sub-tab-nav" style="display: flex; gap: 8px; margin: 15px 20px 0 20px; background: rgba(255,255,255,0.02); padding: 4px; border-radius: 8px; border: 1px solid var(--border-color); width: fit-content;">
+            <button class="btn btn-secondary combined-sub-btn active" data-tab="memory" onclick="switchTabWithSub('memory')">Aturan &amp; Dokumen</button>
+            <button class="btn btn-secondary combined-sub-btn" data-tab="features" onclick="switchTabWithSub('features')">Panduan Fitur</button>
+            <button class="btn btn-secondary combined-sub-btn" data-tab="notes" onclick="switchTabWithSub('notes')">Catatan Admin</button>
+        </div>
         <main class="dashboard-grid">
 
             <!-- PANEL KIRI: Memori & Knowledge -->
@@ -547,6 +552,13 @@
          TAB 5 — TOKO
     ══════════════════════════════════════════ -->
     <div id="tab-shop" class="tab-content hidden">
+        <div class="sub-tab-nav" style="display: flex; gap: 8px; margin: 15px 20px 0 20px; background: rgba(255,255,255,0.02); padding: 4px; border-radius: 8px; border: 1px solid var(--border-color); width: fit-content; flex-wrap: wrap;">
+            <button class="btn btn-secondary combined-sub-btn active" data-tab="shop" onclick="switchTabWithSub('shop')">Host &amp; Broadcast</button>
+            <button class="btn btn-secondary combined-sub-btn" data-tab="transactions" data-sub="orders" onclick="switchTabWithSub('transactions', 'orders')">Daftar Pesanan</button>
+            <button class="btn btn-secondary combined-sub-btn" data-tab="transactions" data-sub="invoices" onclick="switchTabWithSub('transactions', 'invoices')">Riwayat Invoice</button>
+            <button class="btn btn-secondary combined-sub-btn" data-tab="premium" data-sub="stock" onclick="switchTabWithSub('premium', 'stock')">Stok Premium</button>
+            <button class="btn btn-secondary combined-sub-btn" data-tab="premium" data-sub="sales" onclick="switchTabWithSub('premium', 'sales')">Masa Aktif Premium</button>
+        </div>
         <main class="shop-grid">
             
             <!-- KOLOM KIRI: Management Host Admin & Broadcast -->
@@ -900,6 +912,13 @@
          TAB 5 & 6 — TRANSAKSI (PEMESANAN & INVOICE)
     ══════════════════════════════════════════ -->
     <div id="tab-transactions" class="tab-content hidden">
+        <div class="sub-tab-nav" style="display: flex; gap: 8px; margin: 15px 20px 0 20px; background: rgba(255,255,255,0.02); padding: 4px; border-radius: 8px; border: 1px solid var(--border-color); width: fit-content; flex-wrap: wrap;">
+            <button class="btn btn-secondary combined-sub-btn" data-tab="shop" onclick="switchTabWithSub('shop')">Host &amp; Broadcast</button>
+            <button class="btn btn-secondary combined-sub-btn active" data-tab="transactions" data-sub="orders" onclick="switchTabWithSub('transactions', 'orders')">Daftar Pesanan</button>
+            <button class="btn btn-secondary combined-sub-btn" data-tab="transactions" data-sub="invoices" onclick="switchTabWithSub('transactions', 'invoices')">Riwayat Invoice</button>
+            <button class="btn btn-secondary combined-sub-btn" data-tab="premium" data-sub="stock" onclick="switchTabWithSub('premium', 'stock')">Stok Premium</button>
+            <button class="btn btn-secondary combined-sub-btn" data-tab="premium" data-sub="sales" onclick="switchTabWithSub('premium', 'sales')">Masa Aktif Premium</button>
+        </div>
         <main class="dashboard-grid full-grid" style="display: flex; flex-direction: column; gap: 20px; padding: 10px 20px 20px 20px;">
             
             <!-- TOP STATS SUMMARY ROW -->
@@ -1108,6 +1127,11 @@
          TAB 6 — FITUR BOT (HELP & GUIDE)
     ══════════════════════════════════════════ -->
     <div id="tab-features" class="tab-content hidden">
+        <div class="sub-tab-nav" style="display: flex; gap: 8px; margin: 15px 20px 0 20px; background: rgba(255,255,255,0.02); padding: 4px; border-radius: 8px; border: 1px solid var(--border-color); width: fit-content;">
+            <button class="btn btn-secondary combined-sub-btn" data-tab="memory" onclick="switchTabWithSub('memory')">Aturan &amp; Dokumen</button>
+            <button class="btn btn-secondary combined-sub-btn active" data-tab="features" onclick="switchTabWithSub('features')">Panduan Fitur</button>
+            <button class="btn btn-secondary combined-sub-btn" data-tab="notes" onclick="switchTabWithSub('notes')">Catatan Admin</button>
+        </div>
         <main class="dashboard-grid" style="padding: 20px;">
             <section class="panel card" style="grid-column: 1 / -1; background: var(--card-bg); border-radius: 12px; padding: 25px; border: 1px solid var(--border-color);">
                 <h2 style="display: flex; align-items: center; gap: 10px; font-size: 1.5rem; color: var(--text-color); margin-bottom: 5px;"><i data-lucide="help-circle" style="color: var(--primary-color);"></i> Panduan Fitur Bot WhatsApp</h2>
@@ -1198,6 +1222,11 @@
          TAB 7 — CATATAN LOKAL (WORD MINI)
     ══════════════════════════════════════════ -->
     <div id="tab-notes" class="tab-content hidden">
+        <div class="sub-tab-nav" style="display: flex; gap: 8px; margin: 15px 20px 0 20px; background: rgba(255,255,255,0.02); padding: 4px; border-radius: 8px; border: 1px solid var(--border-color); width: fit-content;">
+            <button class="btn btn-secondary combined-sub-btn" data-tab="memory" onclick="switchTabWithSub('memory')">Aturan &amp; Dokumen</button>
+            <button class="btn btn-secondary combined-sub-btn" data-tab="features" onclick="switchTabWithSub('features')">Panduan Fitur</button>
+            <button class="btn btn-secondary combined-sub-btn active" data-tab="notes" onclick="switchTabWithSub('notes')">Catatan Admin</button>
+        </div>
         <main class="dashboard-grid" style="padding: 20px;">
             <section class="panel card" style="grid-column: 1 / -1; display: flex; flex-direction: column; height: calc(100vh - 120px); min-height: 550px; padding: 24px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-card);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-shrink: 0;">
@@ -1721,6 +1750,13 @@
          TAB 8 — PREMIUM MANAGER
     ══════════════════════════════════════════ -->
     <div id="tab-premium" class="tab-content hidden">
+        <div class="sub-tab-nav" style="display: flex; gap: 8px; margin: 15px 0 15px 0; background: rgba(255,255,255,0.02); padding: 4px; border-radius: 8px; border: 1px solid var(--border-color); width: fit-content; flex-wrap: wrap;">
+            <button class="btn btn-secondary combined-sub-btn" data-tab="shop" onclick="switchTabWithSub('shop')">Host &amp; Broadcast</button>
+            <button class="btn btn-secondary combined-sub-btn" data-tab="transactions" data-sub="orders" onclick="switchTabWithSub('transactions', 'orders')">Daftar Pesanan</button>
+            <button class="btn btn-secondary combined-sub-btn" data-tab="transactions" data-sub="invoices" onclick="switchTabWithSub('transactions', 'invoices')">Riwayat Invoice</button>
+            <button class="btn btn-secondary combined-sub-btn active" data-tab="premium" data-sub="stock" onclick="switchTabWithSub('premium', 'stock')">Stok Premium</button>
+            <button class="btn btn-secondary combined-sub-btn" data-tab="premium" data-sub="sales" onclick="switchTabWithSub('premium', 'sales')">Masa Aktif Premium</button>
+        </div>
         <!-- HEADER UTAMA DAN AKSI -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
             <h1 style="font-size: 1.4rem; font-weight: 700; margin: 0; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
@@ -2151,6 +2187,28 @@
                 salesBtn.classList.add('active');
             }
         }
+    };
+
+    window.switchTabWithSub = function(tabId, subTabId) {
+        switchTab(tabId);
+        if (subTabId) {
+            if (tabId === 'transactions') {
+                switchSubTab('transactions', subTabId);
+            } else if (tabId === 'premium') {
+                switchSubTab('premium', subTabId);
+            }
+        }
+        
+        // Sync active state of combined sub-tab buttons
+        document.querySelectorAll('.combined-sub-btn').forEach(btn => {
+            const tTab = btn.getAttribute('data-tab');
+            const tSub = btn.getAttribute('data-sub');
+            if (tTab === tabId && (!tSub || tSub === subTabId)) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
     };
 </script>
 </body>

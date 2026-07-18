@@ -39,15 +39,12 @@ const {
     getCurrentTimeString
 } = require('../ai/aiService');
 
-const FITUR_KEUANGAN = false;
-
 const setMessagesAdminsOnlyHelper = (...args) => require('./client').setMessagesAdminsOnlyHelper(...args);
 
 let clientInstance = null;
 let ioInstance = null;
 
 const activeLocks = new Set();
-const pendingTransactions = new Map();
 const customerMenuStates = new Map();
 
 function normalizePhone(phone) {
@@ -2233,34 +2230,7 @@ async function handleIncomingMessage(msg) {
                     return;
                 }
                 
-                const isReceipt = FITUR_KEUANGAN && isReceiptText(ocrText);
-                console.log('[Local Classifier]: isReceipt =', isReceipt);
-                
-                if (isReceipt) {
-                    const extracted = await extractReceiptDetails(ocrText);
-                    
-                    if (extracted.nominal > 0) {
-                        pendingTransactions.set(chatId, {
-                            intent: 'finance',
-                            type: 'Pengeluaran',
-                            nominal: extracted.nominal,
-                            keterangan: extracted.keterangan || 'Catatan Struk'
-                        });
-                        
-                        await msg.reply(`🤖 *Terdeteksi Struk Belanja/Transaksi*:\n- Tipe: *Pengeluaran*\n- Nominal: *Rp ${extracted.nominal.toLocaleString('id-ID')}*\n- Keterangan: *${extracted.keterangan}*\n\nApakah data ini ingin disimpan ke Google Spreadsheet?\n👉 Balas *YA* untuk menyimpan atau *TIDAK* untuk membatalkannya.`);
-                        
-                        if (ioInstance) {
-                            ioInstance.emit('message_log', {
-                                chatId,
-                                body: `Struk terdeteksi - Menunggu konfirmasi: Rp ${extracted.nominal.toLocaleString('id-ID')} untuk ${extracted.keterangan}`,
-                                type: 'outgoing',
-                                timestamp: Date.now()
-                            });
-                        }
-                        activeLocks.delete(chatId);
-                        return;
-                    }
-                }
+
                 
                 const prompt = `Bos mengirimkan sebuah foto. Hasil pembacaan teks (OCR) pada foto tersebut:\n"""\n${ocrText}\n"""\n\n[INSTRUKSI/PERTANYAAN BOS]: ${userMessage || 'Tolong bacakan atau ringkas teks pada foto di atas.'}`;
                 const result = await generateUnifiedAiResponse(prompt, chatId);
@@ -2305,89 +2275,7 @@ async function handleIncomingMessage(msg) {
         pendingTransactions.delete(chatId);
     }
 
-    // 2. CONFIRM PENDING TRANSACTION (YA/TIDAK)
-    if (FITUR_KEUANGAN && pendingTransactions.has(chatId)) {
-        activeLocks.add(chatId);
-        const pending = pendingTransactions.get(chatId);
-        const replyText = userMessage.toLowerCase().trim();
-        
-        if (replyText === 'ya' || replyText === 'yes' || replyText === 'y') {
-            try {
-                if (pending.intent === 'agenda') {
-                    await sendToGoogleSheets({
-                        action: 'add_agenda',
-                        waktu: pending.waktu,
-                        acara: pending.acara
-                    });
-                    
-                    await addHistoryLog('agenda', {
-                        waktu: pending.waktu,
-                        acara: pending.acara
-                    });
-                    
-                    const successMsg = `✅ Agenda berhasil dijadwalkan Bos!\n\n📅 *Detail Agenda*:\n- Waktu: ${pending.waktu}\n- Acara: ${pending.acara}`;
-                    await msg.reply(successMsg);
-                    
-                    if (ioInstance) {
-                        ioInstance.emit('message_log', {
-                            chatId,
-                            body: `Disimpan ke Sheets: ${pending.waktu} - ${pending.acara}`,
-                            type: 'outgoing',
-                            timestamp: Date.now()
-                        });
-                    }
-                } else {
-                    await sendToGoogleSheets({
-                        action: 'add_finance',
-                        type: pending.type,
-                        nominal: pending.nominal,
-                        keterangan: pending.keterangan
-                    });
-                    
-                    await addHistoryLog('finance', {
-                        tipe: pending.type,
-                        nominal: pending.nominal,
-                        keterangan: pending.keterangan
-                    });
-                    
-                    const summary = await fetchSheetsSummary(true);
-                    const saldoStr = summary ? `Rp ${summary.saldoKas.toLocaleString('id-ID')}` : 'Tidak diketahui';
-                    
-                    const successMsg = `✅ Data berhasil disimpan ke Google Spreadsheet Bos!\n\n📋 *Arus Kas Terdaftar*:\n- Tipe: ${pending.type}\n- Nominal: Rp ${pending.nominal.toLocaleString('id-ID')}\n- Keterangan: ${pending.keterangan}\n\n💼 *Saldo Kas Terbaru*: *${saldoStr}*`;
-                    await msg.reply(successMsg);
-                    
-                    if (ioInstance) {
-                        ioInstance.emit('message_log', {
-                            chatId,
-                            body: `Disimpan ke Sheets: Rp ${pending.nominal.toLocaleString('id-ID')} (${pending.keterangan})`,
-                            type: 'outgoing',
-                            timestamp: Date.now()
-                        });
-                    }
-                }
-                pendingTransactions.delete(chatId);
-            } catch (err) {
-                console.error('Gagal menyimpan data pending ke Sheets:', err.message);
-                await msg.reply(`❌ Gagal menyimpan data ke Google Sheets: ${err.message}`);
-            }
-        } else if (replyText === 'tidak' || replyText === 'no' || replyText === 't') {
-            pendingTransactions.delete(chatId);
-            await msg.reply('❌ Pencatatan dibatalkan Bos.');
-            
-            if (ioInstance) {
-                ioInstance.emit('message_log', {
-                    chatId,
-                    body: `Pencatatan dibatalkan oleh pengguna`,
-                    type: 'outgoing',
-                    timestamp: Date.now()
-                });
-            }
-        } else {
-            await msg.reply('⚠️ Mohon balas dengan *YA* untuk menyimpan data ini, atau *TIDAK* untuk membatalkannya.');
-        }
-        activeLocks.delete(chatId);
-        return;
-    }
+
 
     // 3. ADMIN & BOSS COMMANDS (Only for Host Admin/Boss)
     if (isSenderHostAdmin) {
@@ -2595,118 +2483,7 @@ Ketik obrolan seperti biasa, AI akan mendeteksi otomatis!
         }
     }
 
-    // 4. TEMPLATE FINANCE SHORTCUT
-    const shortcut = FITUR_KEUANGAN ? parseShortcutMessage(userMessage) : null;
-    if (shortcut) {
-        if (shortcut.nominal <= 0) {
-            await msg.reply('❌ Nominal uang tidak valid. Pastikan formatnya benar (contoh: 50rb, 1.5jt, 250000).');
-            return;
-        }
 
-        activeLocks.add(chatId);
-        try {
-            try {
-                const chat = await msg.getChat();
-                await chat.sendStateTyping();
-            } catch (chatErr) {
-                console.warn('[Finance Chat Warning] Gagal mengirim status typing:', chatErr.message);
-            }
-
-            await sendToGoogleSheets({
-                action: 'add_finance',
-                type: shortcut.type,
-                nominal: shortcut.nominal,
-                keterangan: shortcut.keterangan
-            });
-
-            await addHistoryLog('finance', {
-                tipe: shortcut.type,
-                nominal: shortcut.nominal,
-                keterangan: shortcut.keterangan
-            });
-
-            const summary = await fetchSheetsSummary(true);
-            const saldoStr = summary ? `Rp ${summary.saldoKas.toLocaleString('id-ID')}` : 'Tidak diketahui';
-
-            const successMsg = `✅ Berhasil dicatat Bos!\n\n📋 *Rincian Arus Kas*:\n- Tipe: ${shortcut.type}\n- Nominal: Rp ${shortcut.nominal.toLocaleString('id-ID')}\n- Keterangan: ${shortcut.keterangan}\n\n💼 *Saldo Kas Terbaru*: *${saldoStr}*`;
-            await msg.reply(successMsg);
-
-            if (ioInstance) {
-                ioInstance.emit('message_log', {
-                    chatId,
-                    body: `Dicatat: ${shortcut.type} Rp ${shortcut.nominal.toLocaleString('id-ID')} - ${shortcut.keterangan}`,
-                    type: 'outgoing',
-                    timestamp: Date.now()
-                });
-            }
-        } catch (err) {
-            console.error('Gagal mencatat keuangan ke Google Sheets:', err.message);
-            await msg.reply(`❌ Gagal mencatat keuangan ke Google Sheets: ${err.message}`);
-        } finally {
-            activeLocks.delete(chatId);
-        }
-        return;
-    }
-
-    // 5. TEMPLATE AGENDA SHORTCUT
-    if (isSenderHostAdmin && userMessage.toLowerCase().startsWith('#agenda')) {
-        const content = userMessage.substring('#agenda'.length).trim();
-        let waktu = '';
-        let acara = '';
-
-        const parts = content.split(/[|-]/);
-        if (parts.length >= 2) {
-            waktu = parts[0].trim();
-            acara = parts.slice(1).join('-').trim();
-        } else {
-            waktu = 'Hari ini';
-            acara = content;
-        }
-
-        if (!acara) {
-            await msg.reply('❌ Keterangan acara tidak boleh kosong. Format: #agenda [waktu] | [nama acara]');
-            return;
-        }
-
-        activeLocks.add(chatId);
-        try {
-            try {
-                const chat = await msg.getChat();
-                await chat.sendStateTyping();
-            } catch (chatErr) {
-                console.warn('[Agenda Chat Warning] Gagal mengirim status typing:', chatErr.message);
-            }
-
-            await sendToGoogleSheets({
-                action: 'add_agenda',
-                waktu: waktu,
-                acara: acara
-            });
-
-            await addHistoryLog('agenda', {
-                waktu: waktu,
-                acara: acara
-            });
-
-            const successMsg = `✅ Agenda berhasil dijadwalkan Bos!\n\n📅 *Detail Agenda*:\n- Waktu: ${waktu}\n- Acara: ${acara}`;
-            await msg.reply(successMsg);
-
-            if (ioInstance) {
-                ioInstance.emit('message_log', {
-                    chatId,
-                    body: `Jadwal Baru: ${waktu} - ${acara}`,
-                    type: 'outgoing',
-                    timestamp: Date.now()
-                });
-            }
-        } catch (err) {
-            console.error('Gagal mencatat agenda ke Google Sheets:', err.message);
-            await msg.reply(`❌ Gagal mencatat agenda ke Google Sheets: ${err.message}`);
-        } finally {
-            activeLocks.delete(chatId);
-        }
-        return;
-    }
 
     // 6. CUSTOMER SERVICE AI FALLBACK FOR CLIENTS
     if (!isSenderHostAdmin) {
@@ -2823,48 +2600,7 @@ ${knowledge}
         const result = await generateUnifiedAiResponse(userMessage, chatId);
         console.log(`[Unified AI] Hasil analisis:`, JSON.stringify(result));
         
-        if (FITUR_KEUANGAN && result.intent === 'finance' && result.data && result.data.nominal > 0) {
-            const data = result.data;
-            pendingTransactions.set(chatId, {
-                intent: 'finance',
-                type: data.type || 'Pengeluaran',
-                nominal: data.nominal,
-                keterangan: data.keterangan || 'Catatan Keuangan'
-            });
-            
-            const replyMsg = `🤖 *Terdeteksi Catatan Keuangan*:\n- Tipe: *${data.type || 'Pengeluaran'}*\n- Nominal: *Rp ${data.nominal.toLocaleString('id-ID')}*\n- Keterangan: *${data.keterangan || 'Catatan Keuangan'}*\n\nApakah data ini ingin disimpan ke Google Spreadsheet?\n👉 Balas *YA* untuk menyimpan atau *TIDAK* untuk membatalkannya.`;
-            await msg.reply(replyMsg);
-            
-            if (ioInstance) {
-                ioInstance.emit('message_log', {
-                    chatId,
-                    body: `Terdeteksi keuangan (AI) - Menunggu konfirmasi: Rp ${data.nominal.toLocaleString('id-ID')} untuk ${data.keterangan}`,
-                    type: 'outgoing',
-                    timestamp: Date.now()
-                });
-            }
-        } 
-        else if (result.intent === 'agenda' && result.data && result.data.acara) {
-            const data = result.data;
-            pendingTransactions.set(chatId, {
-                intent: 'agenda',
-                waktu: data.waktu || 'Hari ini',
-                acara: data.acara
-            });
-            
-            const replyMsg = `🤖 *Terdeteksi Agenda Baru*:\n- Waktu: *${data.waktu || 'Hari ini'}*\n- Acara: *${data.acara}*\n\nApakah agenda ini ingin dijadwalkan ke Google Spreadsheet?\n👉 Balas *YA* untuk menyimpan atau *TIDAK* untuk membatalkannya.`;
-            await msg.reply(replyMsg);
-            
-            if (ioInstance) {
-                ioInstance.emit('message_log', {
-                    chatId,
-                    body: `Terdeteksi agenda (AI) - Menunggu konfirmasi: ${data.waktu} - ${data.acara}`,
-                    type: 'outgoing',
-                    timestamp: Date.now()
-                });
-            }
-        } 
-        else if (result.intent === 'reminder' && result.data && result.data.waktu && result.data.pesan) {
+        if (result.intent === 'reminder' && result.data && result.data.waktu && result.data.pesan) {
             const data = result.data;
             const targetDate = parseReminderTime(data.waktu);
             if (targetDate) {

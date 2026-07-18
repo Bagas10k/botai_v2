@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const { config, getGeminiKey, rotateGeminiKey } = require('../../config/config');
 const { getChatSession, saveChatSession, getLogHistory } = require('../../db/models');
-const { fetchSheetsSummary } = require('../sheets/sheetsService');
 
 let currentGroqKeyIndex = 0;
 let ioInstance = null;
@@ -395,34 +394,9 @@ ${serializedMenu}
         console.error('Gagal memproses groupContext untuk Unified AI:', err.message);
     }
 
-    let sheetsContext = '';
-    try {
-        const summary = await fetchSheetsSummary();
-        if (summary) {
-            sheetsContext = `
-[DATA KEUANGAN & AGENDA REAL-TIME GOOGLE SHEETS]
-- Total Pemasukan: Rp ${summary.totalPemasukan.toLocaleString('id-ID')}
-- Total Pengeluaran: Rp ${summary.totalPengeluaran.toLocaleString('id-ID')}
-- Saldo Kas Saat Ini (Uang Anda): Rp ${summary.saldoKas.toLocaleString('id-ID')}
- 
-10 Transaksi Keuangan Terakhir:
-${summary.financeList && summary.financeList.length > 0 
-    ? summary.financeList.slice(0, 10).map(f => `- ${f.tipe === 'Pemasukan' ? 'Masuk' : 'Keluar'}: Rp ${f.nominal.toLocaleString('id-ID')} (${f.keterangan})`).join('\n')
-    : '(Belum ada catatan keuangan)'}
-
-5 Agenda / Jadwal Terakhir:
-${summary.agendaList && summary.agendaList.length > 0
-    ? summary.agendaList.slice(0, 5).map(a => `- ${a.waktu}: ${a.acara}`).join('\n')
-    : '(Belum ada agenda terjadwal)'}
-`.trim();
-        }
-    } catch (err) {
-        console.error('Gagal memproses sheetsContext untuk AI:', err.message);
-    }
-    
     const timeString = getCurrentTimeString();
     const currentTimeContext = `[INFORMASI WAKTU SEKARANG]\n- Hari, Tanggal & Jam saat ini: ${timeString}\n- Zona Waktu: UTC+7 (WIB)\n\n`;
-    const combinedContext = `${currentTimeContext}[DATA GRUP & KATALOG PRODUK]\n${groupContext}\n\n[MEMORI PRIBADI BOS]\n${memoryContent}\n\n[DOKUMEN PENDUKUNG]\n${knowledgeContext}\n\n${sheetsContext}`.trim();
+    const combinedContext = `${currentTimeContext}[DATA GRUP & KATALOG PRODUK]\n${groupContext}\n\n[MEMORI PRIBADI BOS]\n${memoryContent}\n\n[DOKUMEN PENDUKUNG]\n${knowledgeContext}`.trim();
     
     const systemPromptTemplate = config.system_prompt_template || 'Kamu adalah asisten virtual bernama Sania. Berikut info pendukung:\n{KNOWLEDGE_BASE_CONTENT}';
     let systemPrompt = systemPromptTemplate.replace('{KNOWLEDGE_BASE_CONTENT}', combinedContext);

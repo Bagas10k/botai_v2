@@ -88,8 +88,14 @@ window.switchTab = function(tabId) {
     const selectedTab = document.getElementById(`tab-${tabId}`);
     if (selectedTab) selectedTab.classList.remove('hidden');
     
-    // Make corresponding tab button active
-    const selectedBtn = document.getElementById(`btn-tab-${tabId}`);
+    // Make corresponding tab button active (with merged tab support)
+    let buttonId = tabId;
+    if (tabId === 'features' || tabId === 'notes') {
+        buttonId = 'memory';
+    } else if (tabId === 'transactions' || tabId === 'premium') {
+        buttonId = 'shop';
+    }
+    const selectedBtn = document.getElementById(`btn-tab-${buttonId}`);
     if (selectedBtn) selectedBtn.classList.add('active');
     
     // Specific triggers
@@ -99,6 +105,9 @@ window.switchTab = function(tabId) {
         loadHostAdmins();
         loadCustomersList();
         loadGroupsList();
+        loadOrders();
+        loadInvoices();
+        loadPremiumData();
     } else if (tabId === 'transactions') {
         loadOrders();
         loadInvoices();

@@ -1,7 +1,6 @@
 const { deactivateReminder, getReminders, getGroupConfigs } = require('../db/models');
 const { getDb } = require('../db/sqlite');
 const { config } = require('../config/config');
-const { fetchSheetsSummary } = require('../services/sheets/sheetsService');
 const { MessageMedia } = require('whatsapp-web.js');
 const { setMessagesAdminsOnlyHelper } = require('../services/whatsapp/client');
 const archiver = require('archiver');
@@ -142,36 +141,14 @@ async function sendDailyReport(clientOrGetClient, io) {
             return;
         }
 
-        console.log('[Scheduler] Mengambil data Google Sheets untuk laporan harian...');
-        const summary = await fetchSheetsSummary(true);
-        if (!summary) {
-            console.error('[Scheduler] Gagal mengambil ringkasan Google Sheets untuk laporan.');
-            return;
-        }
-
         const cleanBoss = config.boss_number.replace(/\D/g, '') + '@c.us';
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Jakarta' };
         const todayStr = new Date().toLocaleDateString('id-ID', options);
 
-        let reportMsg = `💼 *LAPORAN HARIAN ASISTEN PRIBADI* 📊\n`;
+        let reportMsg = `💼 *LAPORAN STATUS HARIAN ASISTEN PRIBADI* 📊\n`;
         reportMsg += `📅 *Hari/Tanggal*: ${todayStr}\n\n`;
-        
-        reportMsg += `💰 *Ringkasan Keuangan*:\n`;
-        reportMsg += `- *Saldo Kas*: Rp ${summary.saldoKas.toLocaleString('id-ID')}\n`;
-        reportMsg += `- *Total Pemasukan*: Rp ${summary.totalPemasukan.toLocaleString('id-ID')}\n`;
-        reportMsg += `- *Total Pengeluaran*: Rp ${summary.totalPengeluaran.toLocaleString('id-ID')}\n\n`;
-
-        reportMsg += `📅 *5 Agenda Terdekat*:\n`;
-        if (summary.agendaList && summary.agendaList.length > 0) {
-            const topAgendas = summary.agendaList.slice(0, 5);
-            topAgendas.forEach((agenda, idx) => {
-                reportMsg += `${idx + 1}. *${agenda.waktu}*: ${agenda.acara}\n`;
-            });
-        } else {
-            reportMsg += `_(Belum ada agenda terdaftar)_\n`;
-        }
-
-        reportMsg += `\nSemoga hari ini berjalan lancar dan penuh keberhasilan, Bos! 🚀`;
+        reportMsg += `🤖 *Status Sistem*: Aktif & Siaga (Connected)\n`;
+        reportMsg += `Semoga hari ini berjalan lancar dan penuh keberhasilan, Bos! 🚀`;
 
         console.log(`[Scheduler] Mengirim laporan harian ke nomor Bos: ${cleanBoss}`);
         await client.sendMessage(cleanBoss, reportMsg);
