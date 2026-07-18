@@ -464,6 +464,11 @@ async function loadConfig() {
             syncSelect.value = window.currentPrivateChatSyncGroupId;
         }
 
+        const privateBotEnabled = document.getElementById('cfg-private-chat-bot-enabled');
+        if (privateBotEnabled) {
+            privateBotEnabled.checked = config.private_chat_bot_enabled !== false;
+        }
+
         cfgBossNumber.value = config.boss_number || '';
         cfgReportTime.value = config.report_time || '08:00';
         cfgSystemPrompt.value = config.system_prompt_template || '';
@@ -526,6 +531,7 @@ function setupConfigHandler() {
             report_time: cfgReportTime.value.trim(),
             system_prompt_template: cfgSystemPrompt.value.trim(),
             private_chat_sync_group_id: document.getElementById('cfg-private-chat-sync-group-id').value,
+            private_chat_bot_enabled: document.getElementById('cfg-private-chat-bot-enabled') ? document.getElementById('cfg-private-chat-bot-enabled').checked : true,
             auto_send_vcard: document.getElementById('cfg-auto-send-vcard').checked,
             vcard_name: document.getElementById('cfg-vcard-name').value.trim(),
             
@@ -2086,12 +2092,18 @@ window.closeShopChatModal = function() {
 };
 
 // Target type selection changer
-window.onBroadcastTargetTypeChange = function(val) {
+window.onBroadcastTargetTypeChange = async function(val) {
     const customGrp = document.getElementById('broadcast-custom-numbers-group');
     const membersGrp = document.getElementById('broadcast-group-members-group');
     
     if (customGrp) customGrp.classList.toggle('hidden', val !== 'custom_numbers');
     if (membersGrp) membersGrp.classList.toggle('hidden', val !== 'group_members');
+    
+    if (val === 'group_members') {
+        if (typeof loadGroupsList === 'function') {
+            await loadGroupsList();
+        }
+    }
 };
 
 // Dropdown groups list populator

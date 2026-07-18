@@ -1382,12 +1382,22 @@
                         <small>URL hasil deployment Google Apps Script di Spreadsheet Anda.</small>
                     </div>
 
-                    <div class="form-group">
-                        <label for="cfg-private-chat-sync-group-id">Sinkronisasi Chat Pribadi dengan Grup</label>
-                        <select id="cfg-private-chat-sync-group-id">
-                            <option value="">-- Pilih Grup Penyelaras --</option>
-                        </select>
-                        <small>Pilih data grup mana yang ingin digunakan sebagai acuan menu & prompt pada Chat Pribadi.</small>
+                    <!-- Private Chat Settings Container -->
+                    <div style="background: rgba(10, 132, 255, 0.08); border-radius: 8px; padding: 12px; border: 1px solid rgba(10, 132, 255, 0.2); margin-top: 15px; margin-bottom: 15px;">
+                        <h3 style="margin: 0 0 10px 0; font-size: 0.85rem; color: #0a84ff; display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="message-square" style="width: 16px; height: 16px; color: #0a84ff;"></i> Pengaturan Chat Pribadi (PM)
+                        </h3>
+                        <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <input type="checkbox" id="cfg-private-chat-bot-enabled" checked style="width: 18px; height: 18px; margin: 0; cursor: pointer;">
+                            <label for="cfg-private-chat-bot-enabled" style="margin: 0; font-size: 0.8rem; cursor: pointer; font-weight: 600; color: var(--text-primary);">Aktifkan Chatbot Respon untuk Chat Pribadi</label>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="cfg-private-chat-sync-group-id" style="font-size: 0.75rem; margin-bottom: 4px; display: block; color: var(--text-secondary); font-weight: 600;">Sinkronisasi Chat Pribadi dengan Grup</label>
+                            <select id="cfg-private-chat-sync-group-id" class="form-control" style="width: 100%; padding: 6px; font-size: 0.85rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px;">
+                                <option value="">-- Pilih Grup Penyelaras --</option>
+                            </select>
+                            <small style="display: block; margin-top: 4px; color: var(--text-secondary);">Pilih data grup mana yang ingin digunakan sebagai acuan menu & prompt pada Chat Pribadi.</small>
+                        </div>
                     </div>
 
                     <div class="form-group">

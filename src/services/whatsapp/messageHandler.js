@@ -41,6 +41,8 @@ const {
 
 const FITUR_KEUANGAN = false;
 
+const { setMessagesAdminsOnlyHelper } = require('./client');
+
 let clientInstance = null;
 let ioInstance = null;
 
@@ -359,6 +361,23 @@ async function handleIncomingMessage(msg) {
 
     if (chatId === 'status@broadcast') return;
 
+    // Auto-save customer to CRM (SQLite)
+    const rawSenderId = msg.author || msg.from;
+    if (!msg.fromMe && rawSenderId && (rawSenderId.endsWith('@c.us') || rawSenderId.endsWith('@lid'))) {
+        (async () => {
+            try {
+                const contact = await msg.getContact();
+                const phone = contact.number || contact.id.user;
+                const name = contact.pushname || contact.name || 'Pelanggan';
+                if (phone && phone.length > 5) {
+                    await addCustomer(phone, name);
+                }
+            } catch (crmErr) {
+                console.error('[CRM Auto-Save Warning] Gagal menyimpan pelanggan otomatis:', crmErr.message);
+            }
+        })();
+    }
+
     // Jika pesan dari nomor bot sendiri, abaikan jika bukan command/shortcut agar tidak looping respons
     if (msg.fromMe) {
         const cleanMsg = userMessage.toLowerCase().trim();
@@ -430,6 +449,11 @@ async function handleIncomingMessage(msg) {
         return cleanAdmin === cleanSender;
     });
     isSenderHostAdmin = isPinnedAdmin || isSenderBoss;
+
+    // Jika ini adalah chat pribadi, bot dinonaktifkan untuk chat pribadi, dan pengirim BUKAN admin/boss, abaikan pesan
+    if (!isGroup && config.private_chat_bot_enabled === false && !isSenderHostAdmin && !isSenderBoss) {
+        return;
+    }
 
     if (!isSenderHostAdmin && isGroup) {
         try {
@@ -595,8 +619,7 @@ async function handleIncomingMessage(msg) {
                 const groupIds = Object.keys(gConfigs);
                 for (const gId of groupIds) {
                     try {
-                        const chat = await clientInstance.getChatById(gId);
-                        await chat.setMessagesAdminsOnly(false);
+                        await setMessagesAdminsOnlyHelper(clientInstance, gId, false);
                         await clientInstance.sendMessage(gId, "🔔 *Pemberitahuan:* Toko telah dibuka kembali. Grup dibuka untuk umum!");
                         successCount++;
                     } catch (err) {
@@ -611,8 +634,7 @@ async function handleIncomingMessage(msg) {
                 const groupIds = Object.keys(gConfigs);
                 for (const gId of groupIds) {
                     try {
-                        const chat = await clientInstance.getChatById(gId);
-                        await chat.setMessagesAdminsOnly(true);
+                        await setMessagesAdminsOnlyHelper(clientInstance, gId, true);
                         await clientInstance.sendMessage(gId, "🔔 *Pemberitahuan:* Toko telah ditutup. Hanya Admin yang dapat mengirim pesan.");
                         successCount++;
                     } catch (err) {
@@ -784,8 +806,7 @@ async function handleIncomingMessage(msg) {
                 return;
             } else if (userMessage === '2') {
                 try {
-                    const chat = await clientInstance.getChatById(selectedGroupId);
-                    await chat.setMessagesAdminsOnly(false);
+                    await setMessagesAdminsOnlyHelper(clientInstance, selectedGroupId, false);
                     await clientInstance.sendMessage(selectedGroupId, "🔓 *Pemberitahuan:* Toko telah dibuka kembali. Grup dibuka untuk umum!");
                     await msg.reply("🔓 Berhasil membuka grup manual.");
                 } catch(err) {
@@ -795,8 +816,7 @@ async function handleIncomingMessage(msg) {
                 return;
             } else if (userMessage === '3') {
                 try {
-                    const chat = await clientInstance.getChatById(selectedGroupId);
-                    await chat.setMessagesAdminsOnly(true);
+                    await setMessagesAdminsOnlyHelper(clientInstance, selectedGroupId, true);
                     await clientInstance.sendMessage(selectedGroupId, "🔒 *Pemberitahuan:* Toko telah ditutup. Hanya Admin yang dapat mengirim pesan.");
                     await msg.reply("🔒 Berhasil menutup grup manual.");
                 } catch(err) {
@@ -1378,8 +1398,7 @@ async function handleIncomingMessage(msg) {
                     return;
                 }
                 try {
-                    const chat = await clientInstance.getChatById(groupId);
-                    await chat.setMessagesAdminsOnly(false);
+                    await setMessagesAdminsOnlyHelper(clientInstance, groupId, false);
                     await msg.reply("🔓 *Pemberitahuan:* Toko telah dibuka kembali. Grup dibuka untuk umum!");
                 } catch (err) {
                     await msg.reply("❌ Gagal membuka grup: " + err.message);
@@ -1393,8 +1412,7 @@ async function handleIncomingMessage(msg) {
                     return;
                 }
                 try {
-                    const chat = await clientInstance.getChatById(groupId);
-                    await chat.setMessagesAdminsOnly(true);
+                    await setMessagesAdminsOnlyHelper(clientInstance, groupId, true);
                     await msg.reply("🔒 *Pemberitahuan:* Toko telah ditutup. Hanya Admin yang dapat mengirim pesan.");
                 } catch (err) {
                     await msg.reply("❌ Gagal menutup grup: " + err.message);
@@ -1912,8 +1930,9 @@ async function handleIncomingMessage(msg) {
     }
 
     // Extra triggers matching
+    let matchedTrigger = null;
     if (activeCfg.extraTriggers && Array.isArray(activeCfg.extraTriggers)) {
-        const matchedTrigger = activeCfg.extraTriggers.find(t => {
+        matchedTrigger = activeCfg.extraTriggers.find(t => {
             if (!t.keyword) return false;
             const kw = t.keyword.toLowerCase().trim();
             if (text !== kw) return false;
@@ -1927,8 +1946,26 @@ async function handleIncomingMessage(msg) {
             }
             return true; // scope 'all' cocok untuk keduanya
         });
+    }
 
-        if (matchedTrigger) {
+    // Fallback untuk chat pribadi: cari trigger berlingkup 'private' dari semua grup lain jika belum cocok
+    if (!matchedTrigger && !isGroup) {
+        for (const gid of Object.keys(gConfigs || {})) {
+            if (gid === configGroupId) continue;
+            const otherCfg = gConfigs[gid];
+            if (otherCfg && otherCfg.extraTriggers && Array.isArray(otherCfg.extraTriggers)) {
+                matchedTrigger = otherCfg.extraTriggers.find(t => {
+                    if (!t.keyword) return false;
+                    const kw = t.keyword.toLowerCase().trim();
+                    if (text !== kw) return false;
+                    return t.scope === 'private';
+                });
+                if (matchedTrigger) break;
+            }
+        }
+    }
+
+    if (matchedTrigger) {
             await msg.reply(matchedTrigger.reply);
             
             if (matchedTrigger.media && matchedTrigger.media.trim() !== '') {
@@ -1956,7 +1993,6 @@ async function handleIncomingMessage(msg) {
             }
             return;
         }
-    }
     
     // Interactive menu choices navigation
     const session = customerMenuStates.get(sessionKey);

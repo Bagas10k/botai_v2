@@ -32,7 +32,8 @@ const {
     getStatus, 
     getQrCode, 
     cleanupHeadlessChrome,
-    restartClient
+    restartClient,
+    setMessagesAdminsOnlyHelper
 } = require('./src/services/whatsapp/client');
 const { performOCR, isReceiptText, extractReceiptDetails } = require('./src/services/ocr/ocrService');
 const { setSocketIo } = require('./src/services/ai/aiService');
@@ -1082,9 +1083,8 @@ app.post('/api/host-admin/open-close-group', async (req, res) => {
             return res.status(500).json({ error: 'WhatsApp client tidak terhubung.' });
         }
         
-        const chat = await client.getChatById(groupId);
         const shouldAdminsOnly = action !== 'buka';
-        await chat.setMessagesAdminsOnly(shouldAdminsOnly);
+        await setMessagesAdminsOnlyHelper(client, groupId, shouldAdminsOnly);
         
         const msgText = shouldAdminsOnly 
             ? "🔔 *Pemberitahuan Manual:* Grup ini ditutup sementara oleh Admin. Hanya Admin yang dapat mengirim pesan."
@@ -1116,8 +1116,7 @@ app.post('/api/shop/action', async (req, res) => {
         
         for (const gid of activeGroupIds) {
             try {
-                const chat = await client.getChatById(gid);
-                await chat.setMessagesAdminsOnly(shouldAdminsOnly);
+                await setMessagesAdminsOnlyHelper(client, gid, shouldAdminsOnly);
                 
                 const msgText = shouldAdminsOnly 
                     ? "🔔 *Pemberitahuan Manual:* Toko ditutup sementara. Grup ini ditutup untuk umum. Hanya Admin yang dapat mengirim pesan."

@@ -422,11 +422,61 @@ async function restartClient(clearSession = false) {
     createNewClient(ioInstance);
 }
 
+async function setMessagesAdminsOnlyHelper(client, groupId, adminsOnly) {
+    if (!client) throw new Error('WhatsApp client tidak terhubung.');
+    const chat = await client.getChatById(groupId);
+    if (!chat.isGroup) {
+        throw new Error('ID tersebut bukan sebuah grup.');
+    }
+
+    // Check if the bot is admin using Puppeteer evaluation (robust for LIDs and aliases)
+    let isBotAdmin = false;
+    try {
+        isBotAdmin = await client.pupPage.evaluate(async (chatId) => {
+            const chat = await window.WWebJS.getChat(chatId, { getAsModel: false });
+            if (!chat || !chat.groupMetadata || !chat.groupMetadata.participants) return false;
+            const meWid = window.Store.Conn.wid;
+            const participant = chat.groupMetadata.participants.find(p => {
+                if (!p.id) return false;
+                if (p.id.equals) return p.id.equals(meWid);
+                return p.id._serialized === meWid._serialized || p.id.user === meWid.user;
+            });
+            return !!(participant && (participant.isAdmin || participant.isSuperAdmin));
+        }, groupId);
+    } catch (evalErr) {
+        console.warn('[setMessagesAdminsOnlyHelper] Gagal memverifikasi status admin via browser:', evalErr.message);
+        // Fallback to basic node-side check
+        const botId = client.info && client.info.wid && client.info.wid._serialized;
+        if (botId && chat.participants) {
+            const participant = chat.participants.find(p => p.id._serialized === botId || p.id.user === botId.split('@')[0]);
+            isBotAdmin = !!(participant && (participant.isAdmin || participant.isSuperAdmin));
+        }
+    }
+
+    if (!isBotAdmin) {
+        throw new Error('Bot bukan admin di grup ini. Silakan jadikan bot sebagai admin grup terlebih dahulu.');
+    }
+
+    try {
+        await chat.setMessagesAdminsOnly(adminsOnly);
+        return true;
+    } catch (err) {
+        console.error(`[setMessagesAdminsOnlyHelper] Gagal mengubah setelan grup ${groupId}:`, err);
+        let errMsg = err.message || String(err);
+        if (errMsg === 'r' || errMsg.includes('Evaluation failed')) {
+            throw new Error('Gagal mengubah setelan grup (kesalahan WhatsApp Web). Pastikan bot memiliki hak akses admin.');
+        }
+        throw err;
+    }
+}
+
 module.exports = {
     createNewClient,
     getClient,
     getStatus,
     getQrCode,
     cleanupHeadlessChrome,
-    restartClient
+    restartClient,
+    setMessagesAdminsOnlyHelper
 };
+

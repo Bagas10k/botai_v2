@@ -3,6 +3,7 @@ const { getDb } = require('../db/sqlite');
 const { config } = require('../config/config');
 const { fetchSheetsSummary } = require('../services/sheets/sheetsService');
 const { MessageMedia } = require('whatsapp-web.js');
+const { setMessagesAdminsOnlyHelper } = require('../services/whatsapp/client');
 const archiver = require('archiver');
 const fs = require('fs');
 const path = require('path');
@@ -296,8 +297,7 @@ async function checkGroupSchedules(clientOrGetClient, getStatus) {
                 
                 if (prevState !== undefined) {
                     try {
-                        const chat = await client.getChatById(groupId);
-                        await chat.setMessagesAdminsOnly(!shouldBeOpen);
+                        await setMessagesAdminsOnlyHelper(client, groupId, !shouldBeOpen);
                         
                         const msgText = shouldBeOpen 
                             ? "🔔 *Pemberitahuan Otomatis:* Jam operasional toko telah dimulai. Grup dibuka kembali untuk umum. Silakan ajukan pesanan Anda!"
